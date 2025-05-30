@@ -26,12 +26,16 @@ export const SourceForm = ({ source, onSuccess }: SourceFormProps) => {
     discovery_method: source?.discovery_method || 'Manual',
     source_type: source?.source_type || 'Governmental',
     expected_companies: source?.expected_companies || 0,
-    adip_source: source?.adip_source || false,
-    search_input_required: source?.search_input_required || false,
-    captcha_requirements: source?.captcha_requirements || false,
+    adip_source: source?.adip_source ?? false,
+    search_input_required: source?.search_input_required ?? false,
+    captcha_requirements: source?.captcha_requirements ?? false,
     language_of_data: source?.language_of_data || '',
     update_frequency: source?.update_frequency || '',
     data_extraction_format: source?.data_extraction_format || 'HTML',
+    compliance_status: source?.compliance_status || 'Under Review',
+    status: source?.status || 'Active',
+    recommendation_score: source?.recommendation_score || 0,
+    source_grade: source?.source_grade || '',
   });
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -47,7 +51,7 @@ export const SourceForm = ({ source, onSuccess }: SourceFormProps) => {
     setIsAnalyzing(true);
     try {
       const analysisResult = await analyzeSourceContent(formData.source_hyperlink);
-      const score = calculateRecommendationScore(analysisResult as any);
+      const score = calculateRecommendationScore(analysisResult);
       const grade = getGradeFromScore(score);
       
       setFormData(prev => ({
@@ -67,14 +71,22 @@ export const SourceForm = ({ source, onSuccess }: SourceFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Ensure required fields are properly set
+    const sourceData = {
+      ...formData,
+      adip_source: formData.adip_source ?? false,
+      search_input_required: formData.search_input_required ?? false,
+      captcha_requirements: formData.captcha_requirements ?? false,
+      compliance_status: formData.compliance_status || 'Under Review',
+      status: formData.status || 'Active',
+      recommendation_score: formData.recommendation_score || 0,
+    } as Omit<DataSource, 'id' | 'created_at' | 'updated_at'>;
+    
     if (source) {
-      updateSource.mutate({ id: source.id, updates: formData }, {
+      updateSource.mutate({ id: source.id, updates: sourceData }, {
         onSuccess: () => onSuccess?.()
       });
     } else {
-      // Create data points record along with source
-      const sourceData = { ...formData };
-      
       createSource.mutate(sourceData, {
         onSuccess: async (newSource) => {
           // Create corresponding data_points record
@@ -239,7 +251,7 @@ export const SourceForm = ({ source, onSuccess }: SourceFormProps) => {
         </div>
       </div>
 
-      {formData.recommendation_score !== undefined && (
+      {formData.recommendation_score !== undefined && formData.recommendation_score > 0 && (
         <div className="p-4 bg-blue-50 rounded-lg">
           <p className="text-sm font-medium">AI Analysis Results:</p>
           <p className="text-lg">Score: {formData.recommendation_score}% | Grade: {formData.source_grade}</p>

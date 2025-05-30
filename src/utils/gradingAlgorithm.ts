@@ -136,6 +136,46 @@ export const calculateSourceGrade = (source: DataSource): { score: number; grade
   return { score: Math.round(totalScore), grade };
 };
 
+// Export additional functions that SourceForm expects
+export const calculateRecommendationScore = (analysisResult: any): number => {
+  // Mock calculation based on analysis results
+  const baseScore = 50;
+  let bonus = 0;
+  
+  if (analysisResult.dataPointsDetected) {
+    const detectedCount = Object.values(analysisResult.dataPointsDetected).filter(Boolean).length;
+    bonus += detectedCount * 5; // 5 points per detected data point
+  }
+  
+  if (analysisResult.confidence) {
+    bonus += analysisResult.confidence * 0.3; // Add confidence percentage * 0.3
+  }
+  
+  if (!analysisResult.captchaDetected) {
+    bonus += 10; // Bonus for no captcha
+  }
+  
+  if (!analysisResult.searchRequired) {
+    bonus += 10; // Bonus for no search requirement
+  }
+  
+  return Math.min(Math.round(baseScore + bonus), 100);
+};
+
+export const getGradeFromScore = (score: number): string => {
+  if (score >= 95) return 'A+';
+  if (score >= 90) return 'A';
+  if (score >= 85) return 'A-';
+  if (score >= 80) return 'B+';
+  if (score >= 75) return 'B';
+  if (score >= 70) return 'B-';
+  if (score >= 65) return 'C+';
+  if (score >= 60) return 'C';
+  if (score >= 55) return 'C-';
+  if (score >= 50) return 'D';
+  return 'F';
+};
+
 // Mock AI-powered content analysis
 export const analyzeSourceContent = async (url: string): Promise<any> => {
   // Simulate API call delay
