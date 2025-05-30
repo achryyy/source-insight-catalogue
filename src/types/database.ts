@@ -25,6 +25,13 @@ export interface DataSource {
   due_date?: string;
   added_value?: string;
   file_hyperlink?: string;
+  approved: boolean;
+  approved_by?: string;
+  approved_at?: string;
+  crawled: boolean;
+  last_crawled_date?: string;
+  needs_review: boolean;
+  auto_populated: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -77,6 +84,7 @@ export interface SourceDiscoveryLog {
   approved_by?: string;
   approved_at?: string;
   notes?: string;
+  needs_review: boolean;
 }
 
 export interface ActivityLog {
@@ -86,4 +94,14 @@ export interface ActivityLog {
   description?: string;
   user_name?: string;
   timestamp: string;
+}
+
+export interface AdvancedFilters {
+  approved?: boolean;
+  adip_source?: boolean;
+  needs_review?: boolean;
+  crawled?: boolean;
+  status?: string[];
+  source_type?: string[];
+  compliance_status?: string[];
 }

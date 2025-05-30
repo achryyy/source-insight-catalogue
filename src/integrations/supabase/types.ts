@@ -174,11 +174,16 @@ export type Database = {
           added_value: string | null
           adip_refresh_frequency: string | null
           adip_source: boolean | null
+          approved: boolean | null
+          approved_at: string | null
+          approved_by: string | null
+          auto_populated: boolean | null
           captcha_requirements: boolean | null
           compliance_status:
             | Database["public"]["Enums"]["compliance_status"]
             | null
           country: string
+          crawled: boolean | null
           created_at: string | null
           data_extraction_format:
             | Database["public"]["Enums"]["data_extraction_format"]
@@ -192,6 +197,8 @@ export type Database = {
           file_hyperlink: string | null
           id: string
           language_of_data: string | null
+          last_crawled_date: string | null
+          needs_review: boolean | null
           page_display_limitation: number | null
           recommendation_score: number | null
           reviewer: string | null
@@ -209,11 +216,16 @@ export type Database = {
           added_value?: string | null
           adip_refresh_frequency?: string | null
           adip_source?: boolean | null
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_populated?: boolean | null
           captcha_requirements?: boolean | null
           compliance_status?:
             | Database["public"]["Enums"]["compliance_status"]
             | null
           country: string
+          crawled?: boolean | null
           created_at?: string | null
           data_extraction_format?:
             | Database["public"]["Enums"]["data_extraction_format"]
@@ -227,6 +239,8 @@ export type Database = {
           file_hyperlink?: string | null
           id?: string
           language_of_data?: string | null
+          last_crawled_date?: string | null
+          needs_review?: boolean | null
           page_display_limitation?: number | null
           recommendation_score?: number | null
           reviewer?: string | null
@@ -244,11 +258,16 @@ export type Database = {
           added_value?: string | null
           adip_refresh_frequency?: string | null
           adip_source?: boolean | null
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_populated?: boolean | null
           captcha_requirements?: boolean | null
           compliance_status?:
             | Database["public"]["Enums"]["compliance_status"]
             | null
           country?: string
+          crawled?: boolean | null
           created_at?: string | null
           data_extraction_format?:
             | Database["public"]["Enums"]["data_extraction_format"]
@@ -262,6 +281,8 @@ export type Database = {
           file_hyperlink?: string | null
           id?: string
           language_of_data?: string | null
+          last_crawled_date?: string | null
+          needs_review?: boolean | null
           page_display_limitation?: number | null
           recommendation_score?: number | null
           reviewer?: string | null
@@ -285,6 +306,7 @@ export type Database = {
           confidence_score: number | null
           discovered_url: string | null
           id: string
+          needs_review: boolean | null
           notes: string | null
           search_criteria: string | null
           status: string | null
@@ -296,6 +318,7 @@ export type Database = {
           confidence_score?: number | null
           discovered_url?: string | null
           id?: string
+          needs_review?: boolean | null
           notes?: string | null
           search_criteria?: string | null
           status?: string | null
@@ -307,6 +330,7 @@ export type Database = {
           confidence_score?: number | null
           discovered_url?: string | null
           id?: string
+          needs_review?: boolean | null
           notes?: string | null
           search_criteria?: string | null
           status?: string | null
