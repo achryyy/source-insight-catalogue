@@ -1,165 +1,195 @@
 
-import { DataPoints } from '@/types/database';
+import { DataSource, SourceDiscoveryLog } from '@/types/database';
 
 export interface GradingClass {
   name: string;
   weight: number;
-  dataPoints: (keyof DataPoints)[];
+  criteria: GradingCriteria[];
+}
+
+export interface GradingCriteria {
+  name: string;
+  maxScore: number;
+  evaluator: (source: DataSource) => number;
 }
 
 export const gradingClasses: GradingClass[] = [
   {
-    name: 'Company Information',
-    weight: 0.5,
-    dataPoints: ['company_name', 'trade_name', 'address', 'contact_details']
-  },
-  {
-    name: 'Company Identification Numbers',
-    weight: 0.1,
-    dataPoints: [
-      'uin', 'uin_commercial_register', 'uin_chamber', 'uin_license', 
-      'uin_vat_no', 'uin_others', 'company_registration_date', 
-      'register_issue_date', 'register_expiry_date', 'register_status', 'legal_form'
+    name: 'Data Quality & Completeness',
+    weight: 0.25,
+    criteria: [
+      {
+        name: 'Number of Data Points Available',
+        maxScore: 100,
+        evaluator: (source) => {
+          // Mock evaluation based on expected companies
+          const companies = source.expected_companies || 0;
+          if (companies > 50000) return 100;
+          if (companies > 10000) return 80;
+          if (companies > 1000) return 60;
+          return 40;
+        }
+      }
     ]
   },
   {
-    name: 'Business Classification',
-    weight: 0.1,
-    dataPoints: ['activity_code', 'activity_description']
-  },
-  {
-    name: 'Shareholder Information',
-    weight: 0.1,
-    dataPoints: [
-      'shareholder_name', 'shareholder_nationality', 'shareholder_dob',
-      'shareholder_uin', 'shareholder_address', 'shareholder_shares', 'company_shares'
+    name: 'Accessibility & Technical',
+    weight: 0.20,
+    criteria: [
+      {
+        name: 'Website Accessibility',
+        maxScore: 100,
+        evaluator: (source) => {
+          if (source.captcha_requirements) return 50;
+          if (source.search_input_required) return 70;
+          return 90;
+        }
+      }
     ]
   },
   {
-    name: 'Director Information',
-    weight: 0.1,
-    dataPoints: [
-      'director_name', 'director_nationality', 'director_dob',
-      'director_position', 'director_address'
+    name: 'Legal & Compliance',
+    weight: 0.20,
+    criteria: [
+      {
+        name: 'Compliance Status',
+        maxScore: 100,
+        evaluator: (source) => {
+          switch (source.compliance_status) {
+            case 'Compliant': return 100;
+            case 'Under Review': return 50;
+            case 'Non-Compliant': return 0;
+            default: return 25;
+          }
+        }
+      }
     ]
   },
   {
-    name: 'Employment and Financials',
-    weight: 0.1,
-    dataPoints: ['number_of_employees', 'full_financials', 'partial_financials', 'capital']
+    name: 'Data Currency & Updates',
+    weight: 0.15,
+    criteria: [
+      {
+        name: 'Update Frequency',
+        maxScore: 100,
+        evaluator: (source) => {
+          const frequency = source.update_frequency?.toLowerCase() || '';
+          if (frequency.includes('daily')) return 100;
+          if (frequency.includes('weekly')) return 80;
+          if (frequency.includes('monthly')) return 60;
+          if (frequency.includes('quarterly')) return 40;
+          return 20;
+        }
+      }
+    ]
+  },
+  {
+    name: 'Source Reliability',
+    weight: 0.20,
+    criteria: [
+      {
+        name: 'Source Type Credibility',
+        maxScore: 100,
+        evaluator: (source) => {
+          switch (source.source_type) {
+            case 'Governmental': return 100;
+            case 'Ministry': return 95;
+            case 'Stock Exchange': return 90;
+            case 'Chamber': return 80;
+            case 'Non-governmental': return 60;
+            default: return 40;
+          }
+        }
+      }
+    ]
   }
 ];
 
-export const calculateRecommendationScore = (dataPoints: DataPoints): number => {
+export const calculateSourceGrade = (source: DataSource): { score: number; grade: string } => {
   let totalScore = 0;
-
+  
   for (const gradingClass of gradingClasses) {
-    const hasAnyDataPoint = gradingClass.dataPoints.some(
-      point => dataPoints[point] === true
-    );
+    let classScore = 0;
     
-    if (hasAnyDataPoint) {
-      totalScore += gradingClass.weight;
+    for (const criteria of gradingClass.criteria) {
+      classScore += criteria.evaluator(source);
     }
+    
+    // Average the criteria scores for this class
+    const avgClassScore = classScore / gradingClass.criteria.length;
+    totalScore += avgClassScore * gradingClass.weight;
   }
-
-  return Math.round(totalScore * 100 * 100) / 100; // Round to 2 decimal places
-};
-
-export const getGradeFromScore = (score: number): string => {
-  if (score >= 90) return 'A+';
-  if (score >= 80) return 'A';
-  if (score >= 70) return 'B';
-  if (score >= 60) return 'B-';
-  if (score >= 50) return 'C';
-  if (score >= 40) return 'C-';
-  if (score >= 30) return 'D';
-  return 'F';
-};
-
-export const getScoreColor = (score: number): string => {
-  if (score >= 80) return 'text-green-600';
-  if (score >= 60) return 'text-blue-600';
-  if (score >= 40) return 'text-yellow-600';
-  return 'text-red-600';
-};
-
-// Mock AI analysis function - in production this would call an actual AI service
-export const analyzeSourceContent = async (url: string): Promise<Partial<DataPoints>> => {
-  // Simulate AI analysis delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
   
-  // Mock AI results based on common patterns
-  const mockResults: Partial<DataPoints> = {};
+  // Determine grade based on score
+  let grade = 'F';
+  if (totalScore >= 95) grade = 'A+';
+  else if (totalScore >= 90) grade = 'A';
+  else if (totalScore >= 85) grade = 'A-';
+  else if (totalScore >= 80) grade = 'B+';
+  else if (totalScore >= 75) grade = 'B';
+  else if (totalScore >= 70) grade = 'B-';
+  else if (totalScore >= 65) grade = 'C+';
+  else if (totalScore >= 60) grade = 'C';
+  else if (totalScore >= 55) grade = 'C-';
+  else if (totalScore >= 50) grade = 'D';
   
-  // Simulate different analysis results based on URL patterns
-  if (url.includes('chamber') || url.includes('commercial')) {
-    Object.assign(mockResults, {
-      company_name: true,
-      trade_name: true,
-      address: true,
-      contact_details: true,
-      uin_commercial_register: true,
-      activity_code: true,
-      activity_description: true
-    });
-  } else if (url.includes('stock') || url.includes('exchange')) {
-    Object.assign(mockResults, {
-      company_name: true,
-      shareholder_name: true,
-      director_name: true,
-      full_financials: true,
-      capital: true
-    });
-  } else if (url.includes('gov') || url.includes('ministry')) {
-    Object.assign(mockResults, {
-      company_name: true,
-      uin: true,
-      legal_form: true,
-      company_registration_date: true,
-      register_status: true
-    });
-  } else {
-    // Default basic analysis
-    Object.assign(mockResults, {
-      company_name: true,
-      address: true,
-      uin: true
-    });
-  }
+  return { score: Math.round(totalScore), grade };
+};
+
+// Mock AI-powered content analysis
+export const analyzeSourceContent = async (url: string): Promise<any> => {
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Mock analysis results
+  const mockResults = {
+    dataPointsDetected: {
+      company_name: Math.random() > 0.2,
+      address: Math.random() > 0.3,
+      contact_details: Math.random() > 0.4,
+      uin: Math.random() > 0.5,
+      legal_form: Math.random() > 0.6,
+      activity_code: Math.random() > 0.4,
+      shareholder_name: Math.random() > 0.7,
+      director_name: Math.random() > 0.6,
+      full_financials: Math.random() > 0.8
+    },
+    language: Math.random() > 0.5 ? 'Arabic' : 'English',
+    updateFrequency: ['Daily', 'Weekly', 'Monthly', 'Quarterly'][Math.floor(Math.random() * 4)],
+    captchaDetected: Math.random() > 0.8,
+    searchRequired: Math.random() > 0.6,
+    confidence: Math.floor(Math.random() * 30) + 70 // 70-100%
+  };
   
   return mockResults;
 };
 
-// Mock web discovery function
+// Mock automated source discovery
 export const discoverSources = async (criteria: {
   keywords: string;
   region: string;
   sourceType: string;
 }): Promise<SourceDiscoveryLog[]> => {
-  // Simulate discovery delay
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 2000));
   
-  const mockSources = [
+  // Mock discovered sources based on criteria
+  const mockSources: Partial<SourceDiscoveryLog>[] = [
     {
-      id: crypto.randomUUID(),
-      search_criteria: criteria.keywords,
-      discovered_url: `https://${criteria.region.toLowerCase()}-business-registry.com`,
-      confidence_score: Math.round((Math.random() * 40 + 60) * 100) / 100,
+      search_criteria: `${criteria.keywords} ${criteria.region} ${criteria.sourceType}`,
+      discovered_url: `https://${criteria.region.toLowerCase()}-chamber.org`,
+      confidence_score: Math.floor(Math.random() * 20) + 75,
       status: 'Pending',
-      analyzed_at: new Date().toISOString(),
-      notes: `Discovered via automated search for ${criteria.keywords} in ${criteria.region}`
+      notes: `Discovered through AI analysis of ${criteria.keywords} in ${criteria.region}`
     },
     {
-      id: crypto.randomUUID(),
-      search_criteria: criteria.keywords,
-      discovered_url: `https://${criteria.region.toLowerCase()}-companies.gov`,
-      confidence_score: Math.round((Math.random() * 30 + 70) * 100) / 100,
+      search_criteria: `${criteria.keywords} ${criteria.region} commercial registry`,
+      discovered_url: `https://registry.${criteria.region.toLowerCase()}.gov`,
+      confidence_score: Math.floor(Math.random() * 15) + 80,
       status: 'Pending',
-      analyzed_at: new Date().toISOString(),
-      notes: `Government source found for ${criteria.sourceType} in ${criteria.region}`
+      notes: `High-confidence governmental source for ${criteria.region}`
     }
   ];
   
-  return mockSources;
+  return mockSources as SourceDiscoveryLog[];
 };

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,7 +37,7 @@ import { useSourceDiscoveryLogs, useCreateDiscoveryLog } from '@/hooks/useSource
 import { SourceForm } from '@/components/SourceForm';
 import { discoverSources, gradingClasses } from '@/utils/gradingAlgorithm';
 import { DataSource } from '@/types/database';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,7 +87,11 @@ const Index = () => {
 
   const handleStartDiscovery = async () => {
     if (!discoveryForm.keywords || !discoveryForm.region || !discoveryForm.sourceType) {
-      toast.error('Please fill in all discovery criteria');
+      toast({
+        title: "Error",
+        description: "Please fill in all discovery criteria",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -101,9 +104,16 @@ const Index = () => {
         await createDiscoveryLog.mutateAsync(source);
       }
       
-      toast.success(`Discovered ${discoveredSources.length} potential sources`);
+      toast({
+        title: "Success",
+        description: `Discovered ${discoveredSources.length} potential sources`,
+      });
     } catch (error) {
-      toast.error('Discovery failed. Please try again.');
+      toast({
+        title: "Error",
+        description: "Discovery failed. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsDiscovering(false);
     }

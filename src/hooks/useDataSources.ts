@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DataSource, DataPoints } from '@/types/database';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 export const useDataSources = () => {
   return useQuery({
@@ -41,7 +41,7 @@ export const useCreateDataSource = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (sourceData: Partial<DataSource>) => {
+    mutationFn: async (sourceData: Omit<DataSource, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('data_sources')
         .insert([sourceData])
@@ -54,10 +54,17 @@ export const useCreateDataSource = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
       queryClient.invalidateQueries({ queryKey: ['data-sources-with-points'] });
-      toast.success('Data source created successfully');
+      toast({
+        title: "Success",
+        description: "Data source created successfully",
+      });
     },
     onError: (error) => {
-      toast.error('Failed to create data source: ' + error.message);
+      toast({
+        title: "Error",
+        description: "Failed to create data source: " + error.message,
+        variant: "destructive",
+      });
     },
   });
 };
@@ -80,10 +87,17 @@ export const useUpdateDataSource = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
       queryClient.invalidateQueries({ queryKey: ['data-sources-with-points'] });
-      toast.success('Data source updated successfully');
+      toast({
+        title: "Success",
+        description: "Data source updated successfully",
+      });
     },
     onError: (error) => {
-      toast.error('Failed to update data source: ' + error.message);
+      toast({
+        title: "Error",
+        description: "Failed to update data source: " + error.message,
+        variant: "destructive",
+      });
     },
   });
 };
@@ -103,10 +117,17 @@ export const useDeleteDataSource = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
       queryClient.invalidateQueries({ queryKey: ['data-sources-with-points'] });
-      toast.success('Data source deleted successfully');
+      toast({
+        title: "Success",
+        description: "Data source deleted successfully",
+      });
     },
     onError: (error) => {
-      toast.error('Failed to delete data source: ' + error.message);
+      toast({
+        title: "Error",
+        description: "Failed to delete data source: " + error.message,
+        variant: "destructive",
+      });
     },
   });
 };

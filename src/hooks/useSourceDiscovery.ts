@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SourceDiscoveryLog } from '@/types/database';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 export const useSourceDiscoveryLogs = () => {
   return useQuery({
@@ -35,7 +35,10 @@ export const useCreateDiscoveryLog = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['source-discovery-logs'] });
-      toast.success('Discovery log created successfully');
+      toast({
+        title: "Success",
+        description: "Discovery log created successfully",
+      });
     },
   });
 };
@@ -57,7 +60,10 @@ export const useUpdateDiscoveryLog = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['source-discovery-logs'] });
-      toast.success('Discovery log updated successfully');
+      toast({
+        title: "Success",
+        description: "Discovery log updated successfully",
+      });
     },
   });
 };
