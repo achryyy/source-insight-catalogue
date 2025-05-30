@@ -9,7 +9,310 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      activity_logs: {
+        Row: {
+          action: string
+          description: string | null
+          id: string
+          source_id: string | null
+          timestamp: string | null
+          user_name: string | null
+        }
+        Insert: {
+          action: string
+          description?: string | null
+          id?: string
+          source_id?: string | null
+          timestamp?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          action?: string
+          description?: string | null
+          id?: string
+          source_id?: string | null
+          timestamp?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_points: {
+        Row: {
+          activity_code: boolean | null
+          activity_description: boolean | null
+          address: boolean | null
+          capital: boolean | null
+          company_name: boolean | null
+          company_registration_date: boolean | null
+          company_shares: boolean | null
+          contact_details: boolean | null
+          created_at: string | null
+          director_address: boolean | null
+          director_dob: boolean | null
+          director_name: boolean | null
+          director_nationality: boolean | null
+          director_position: boolean | null
+          full_financials: boolean | null
+          id: string
+          legal_form: boolean | null
+          number_of_employees: boolean | null
+          partial_financials: boolean | null
+          register_expiry_date: boolean | null
+          register_issue_date: boolean | null
+          register_status: boolean | null
+          shareholder_address: boolean | null
+          shareholder_dob: boolean | null
+          shareholder_name: boolean | null
+          shareholder_nationality: boolean | null
+          shareholder_shares: boolean | null
+          shareholder_uin: boolean | null
+          source_id: string | null
+          trade_name: boolean | null
+          uin: boolean | null
+          uin_chamber: boolean | null
+          uin_commercial_register: boolean | null
+          uin_license: boolean | null
+          uin_others: boolean | null
+          uin_vat_no: boolean | null
+        }
+        Insert: {
+          activity_code?: boolean | null
+          activity_description?: boolean | null
+          address?: boolean | null
+          capital?: boolean | null
+          company_name?: boolean | null
+          company_registration_date?: boolean | null
+          company_shares?: boolean | null
+          contact_details?: boolean | null
+          created_at?: string | null
+          director_address?: boolean | null
+          director_dob?: boolean | null
+          director_name?: boolean | null
+          director_nationality?: boolean | null
+          director_position?: boolean | null
+          full_financials?: boolean | null
+          id?: string
+          legal_form?: boolean | null
+          number_of_employees?: boolean | null
+          partial_financials?: boolean | null
+          register_expiry_date?: boolean | null
+          register_issue_date?: boolean | null
+          register_status?: boolean | null
+          shareholder_address?: boolean | null
+          shareholder_dob?: boolean | null
+          shareholder_name?: boolean | null
+          shareholder_nationality?: boolean | null
+          shareholder_shares?: boolean | null
+          shareholder_uin?: boolean | null
+          source_id?: string | null
+          trade_name?: boolean | null
+          uin?: boolean | null
+          uin_chamber?: boolean | null
+          uin_commercial_register?: boolean | null
+          uin_license?: boolean | null
+          uin_others?: boolean | null
+          uin_vat_no?: boolean | null
+        }
+        Update: {
+          activity_code?: boolean | null
+          activity_description?: boolean | null
+          address?: boolean | null
+          capital?: boolean | null
+          company_name?: boolean | null
+          company_registration_date?: boolean | null
+          company_shares?: boolean | null
+          contact_details?: boolean | null
+          created_at?: string | null
+          director_address?: boolean | null
+          director_dob?: boolean | null
+          director_name?: boolean | null
+          director_nationality?: boolean | null
+          director_position?: boolean | null
+          full_financials?: boolean | null
+          id?: string
+          legal_form?: boolean | null
+          number_of_employees?: boolean | null
+          partial_financials?: boolean | null
+          register_expiry_date?: boolean | null
+          register_issue_date?: boolean | null
+          register_status?: boolean | null
+          shareholder_address?: boolean | null
+          shareholder_dob?: boolean | null
+          shareholder_name?: boolean | null
+          shareholder_nationality?: boolean | null
+          shareholder_shares?: boolean | null
+          shareholder_uin?: boolean | null
+          source_id?: string | null
+          trade_name?: boolean | null
+          uin?: boolean | null
+          uin_chamber?: boolean | null
+          uin_commercial_register?: boolean | null
+          uin_license?: boolean | null
+          uin_others?: boolean | null
+          uin_vat_no?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_points_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_sources: {
+        Row: {
+          added_value: string | null
+          adip_refresh_frequency: string | null
+          adip_source: boolean | null
+          captcha_requirements: boolean | null
+          compliance_status:
+            | Database["public"]["Enums"]["compliance_status"]
+            | null
+          country: string
+          created_at: string | null
+          data_extraction_format:
+            | Database["public"]["Enums"]["data_extraction_format"]
+            | null
+          data_usage_limitations: string | null
+          discovery_method:
+            | Database["public"]["Enums"]["discovery_method"]
+            | null
+          due_date: string | null
+          expected_companies: number | null
+          file_hyperlink: string | null
+          id: string
+          language_of_data: string | null
+          page_display_limitation: number | null
+          recommendation_score: number | null
+          reviewer: string | null
+          search_input_required: boolean | null
+          source_grade: string | null
+          source_hyperlink: string | null
+          source_name: string
+          source_type: Database["public"]["Enums"]["source_type"]
+          status: Database["public"]["Enums"]["source_status"] | null
+          terms_conditions: string | null
+          update_frequency: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          added_value?: string | null
+          adip_refresh_frequency?: string | null
+          adip_source?: boolean | null
+          captcha_requirements?: boolean | null
+          compliance_status?:
+            | Database["public"]["Enums"]["compliance_status"]
+            | null
+          country: string
+          created_at?: string | null
+          data_extraction_format?:
+            | Database["public"]["Enums"]["data_extraction_format"]
+            | null
+          data_usage_limitations?: string | null
+          discovery_method?:
+            | Database["public"]["Enums"]["discovery_method"]
+            | null
+          due_date?: string | null
+          expected_companies?: number | null
+          file_hyperlink?: string | null
+          id?: string
+          language_of_data?: string | null
+          page_display_limitation?: number | null
+          recommendation_score?: number | null
+          reviewer?: string | null
+          search_input_required?: boolean | null
+          source_grade?: string | null
+          source_hyperlink?: string | null
+          source_name: string
+          source_type: Database["public"]["Enums"]["source_type"]
+          status?: Database["public"]["Enums"]["source_status"] | null
+          terms_conditions?: string | null
+          update_frequency?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          added_value?: string | null
+          adip_refresh_frequency?: string | null
+          adip_source?: boolean | null
+          captcha_requirements?: boolean | null
+          compliance_status?:
+            | Database["public"]["Enums"]["compliance_status"]
+            | null
+          country?: string
+          created_at?: string | null
+          data_extraction_format?:
+            | Database["public"]["Enums"]["data_extraction_format"]
+            | null
+          data_usage_limitations?: string | null
+          discovery_method?:
+            | Database["public"]["Enums"]["discovery_method"]
+            | null
+          due_date?: string | null
+          expected_companies?: number | null
+          file_hyperlink?: string | null
+          id?: string
+          language_of_data?: string | null
+          page_display_limitation?: number | null
+          recommendation_score?: number | null
+          reviewer?: string | null
+          search_input_required?: boolean | null
+          source_grade?: string | null
+          source_hyperlink?: string | null
+          source_name?: string
+          source_type?: Database["public"]["Enums"]["source_type"]
+          status?: Database["public"]["Enums"]["source_status"] | null
+          terms_conditions?: string | null
+          update_frequency?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      source_discovery_logs: {
+        Row: {
+          analyzed_at: string | null
+          approved_at: string | null
+          approved_by: string | null
+          confidence_score: number | null
+          discovered_url: string | null
+          id: string
+          notes: string | null
+          search_criteria: string | null
+          status: string | null
+        }
+        Insert: {
+          analyzed_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence_score?: number | null
+          discovered_url?: string | null
+          id?: string
+          notes?: string | null
+          search_criteria?: string | null
+          status?: string | null
+        }
+        Update: {
+          analyzed_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence_score?: number | null
+          discovered_url?: string | null
+          id?: string
+          notes?: string | null
+          search_criteria?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +321,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      compliance_status: "Compliant" | "Under Review" | "Non-Compliant"
+      data_extraction_format: "HTML" | "PDF" | "API" | "Excel" | "CSV"
+      discovery_method: "Manual" | "Automated"
+      source_status: "Active" | "Inactive" | "Under Maintenance"
+      source_type:
+        | "Governmental"
+        | "Ministry"
+        | "Stock Exchange"
+        | "Chamber"
+        | "Non-governmental"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +445,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      compliance_status: ["Compliant", "Under Review", "Non-Compliant"],
+      data_extraction_format: ["HTML", "PDF", "API", "Excel", "CSV"],
+      discovery_method: ["Manual", "Automated"],
+      source_status: ["Active", "Inactive", "Under Maintenance"],
+      source_type: [
+        "Governmental",
+        "Ministry",
+        "Stock Exchange",
+        "Chamber",
+        "Non-governmental",
+      ],
+    },
   },
 } as const

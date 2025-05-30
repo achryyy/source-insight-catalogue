@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Search, 
   Plus, 
@@ -28,93 +29,85 @@ import {
   BarChart3,
   Users,
   Building2,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react';
+
+import { useDataSourcesWithPoints } from '@/hooks/useDataSources';
+import { useSourceDiscoveryLogs, useCreateDiscoveryLog } from '@/hooks/useSourceDiscovery';
+import { SourceForm } from '@/components/SourceForm';
+import { discoverSources, gradingClasses } from '@/utils/gradingAlgorithm';
+import { DataSource } from '@/types/database';
+import { toast } from 'sonner';
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingSource, setEditingSource] = useState<DataSource | undefined>();
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoveryForm, setDiscoveryForm] = useState({
+    keywords: '',
+    region: '',
+    sourceType: ''
+  });
 
-  // Mock data for demonstration
+  const { data: sourcesWithPoints, isLoading } = useDataSourcesWithPoints();
+  const { data: discoveryLogs } = useSourceDiscoveryLogs();
+  const createDiscoveryLog = useCreateDiscoveryLog();
+
+  const sources = sourcesWithPoints || [];
+
+  // Calculate dashboard stats
   const dashboardStats = {
-    totalSources: 1247,
-    activeSources: 1089,
-    avgRecommendationScore: 78.5,
-    complianceCoverage: 94.2,
-    newSourcesThisMonth: 23,
-    pendingReview: 15
+    totalSources: sources.length,
+    activeSources: sources.filter(s => s.status === 'Active').length,
+    avgRecommendationScore: sources.length > 0 ? 
+      sources.reduce((acc, s) => acc + s.recommendation_score, 0) / sources.length : 0,
+    complianceCoverage: sources.length > 0 ?
+      (sources.filter(s => s.compliance_status === 'Compliant').length / sources.length) * 100 : 0,
+    newSourcesThisMonth: sources.filter(s => {
+      const created = new Date(s.created_at);
+      const now = new Date();
+      return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+    }).length,
+    pendingReview: sources.filter(s => s.compliance_status === 'Under Review').length
   };
 
-  const mockSources = [
-    {
-      id: 1,
-      name: "UAE Chamber of Commerce",
-      country: "UAE",
-      type: "Chamber",
-      status: "Active",
-      recommendationScore: 92,
-      grade: "A+",
-      companiesExpected: 45000,
-      lastUpdated: "2024-05-28",
-      compliance: "Compliant",
-      dataPoints: ["Company Name", "Trade Name", "Address", "Contact Details", "UIN", "Registration Date"],
-      adipSource: true
-    },
-    {
-      id: 2,
-      name: "Saudi Ministry of Commerce",
-      country: "Saudi Arabia",
-      type: "Governmental",
-      status: "Active",
-      recommendationScore: 88,
-      grade: "A",
-      companiesExpected: 78000,
-      lastUpdated: "2024-05-27",
-      compliance: "Under Review",
-      dataPoints: ["Company Name", "Address", "UIN", "Legal Form", "Activity Code"],
-      adipSource: false
-    },
-    {
-      id: 3,
-      name: "Egyptian Stock Exchange",
-      country: "Egypt",
-      type: "Stock Exchange",
-      status: "Active",
-      recommendationScore: 85,
-      grade: "A",
-      companiesExpected: 1200,
-      lastUpdated: "2024-05-29",
-      compliance: "Compliant",
-      dataPoints: ["Company Name", "Financials", "Shareholders", "Directors"],
-      adipSource: true
-    },
-    {
-      id: 4,
-      name: "Jordan Companies Registry",
-      country: "Jordan",
-      type: "Governmental",
-      status: "Under Maintenance",
-      recommendationScore: 45,
-      grade: "C",
-      companiesExpected: 25000,
-      lastUpdated: "2024-05-20",
-      compliance: "Non-Compliant",
-      dataPoints: ["Company Name", "UIN"],
-      adipSource: false
-    }
-  ];
-
-  const filteredSources = mockSources.filter(source => {
-    const matchesSearch = source.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredSources = sources.filter(source => {
+    const matchesSearch = source.source_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          source.country.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCountry = selectedCountry === 'all' || source.country === selectedCountry;
-    const matchesType = selectedType === 'all' || source.type === selectedType;
+    const matchesType = selectedType === 'all' || source.source_type === selectedType;
     const matchesStatus = selectedStatus === 'all' || source.status === selectedStatus;
     
     return matchesSearch && matchesCountry && matchesType && matchesStatus;
   });
+
+  const handleStartDiscovery = async () => {
+    if (!discoveryForm.keywords || !discoveryForm.region || !discoveryForm.sourceType) {
+      toast.error('Please fill in all discovery criteria');
+      return;
+    }
+
+    setIsDiscovering(true);
+    try {
+      const discoveredSources = await discoverSources(discoveryForm);
+      
+      // Save discovery logs to database
+      for (const source of discoveredSources) {
+        await createDiscoveryLog.mutateAsync(source);
+      }
+      
+      toast.success(`Discovered ${discoveredSources.length} potential sources`);
+    } catch (error) {
+      toast.error('Discovery failed. Please try again.');
+    } finally {
+      setIsDiscovering(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -135,12 +128,38 @@ const Index = () => {
   };
 
   const getGradeColor = (grade: string) => {
-    if (grade.startsWith('A')) return 'text-green-600';
-    if (grade.startsWith('B')) return 'text-blue-600';
-    if (grade.startsWith('C')) return 'text-yellow-600';
-    if (grade.startsWith('D')) return 'text-red-600';
+    if (grade?.startsWith('A')) return 'text-green-600';
+    if (grade?.startsWith('B')) return 'text-blue-600';
+    if (grade?.startsWith('C')) return 'text-yellow-600';
+    if (grade?.startsWith('D')) return 'text-red-600';
     return 'text-gray-600';
   };
+
+  const getDataPointsList = (dataPoints: any) => {
+    if (!dataPoints) return [];
+    
+    const availablePoints = [];
+    if (dataPoints.company_name) availablePoints.push('Company Name');
+    if (dataPoints.trade_name) availablePoints.push('Trade Name');
+    if (dataPoints.address) availablePoints.push('Address');
+    if (dataPoints.contact_details) availablePoints.push('Contact Details');
+    if (dataPoints.uin) availablePoints.push('UIN');
+    if (dataPoints.legal_form) availablePoints.push('Legal Form');
+    if (dataPoints.activity_code) availablePoints.push('Activity Code');
+    if (dataPoints.shareholder_name) availablePoints.push('Shareholders');
+    if (dataPoints.director_name) availablePoints.push('Directors');
+    if (dataPoints.full_financials) availablePoints.push('Financials');
+    
+    return availablePoints;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -158,14 +177,26 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline" className="flex items-center space-x-2">
-                <Bot className="h-4 w-4" />
-                <span>AI Analysis</span>
-              </Button>
-              <Button className="flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Add Source</span>
-              </Button>
+              <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center space-x-2">
+                    <Plus className="h-4 w-4" />
+                    <span>Add Source</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{editingSource ? 'Edit Source' : 'Add New Source'}</DialogTitle>
+                  </DialogHeader>
+                  <SourceForm 
+                    source={editingSource} 
+                    onSuccess={() => {
+                      setIsFormOpen(false);
+                      setEditingSource(undefined);
+                    }} 
+                  />
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -222,7 +253,10 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{dashboardStats.activeSources.toLocaleString()}</div>
-                  <p className="text-green-100 mt-1">{((dashboardStats.activeSources / dashboardStats.totalSources) * 100).toFixed(1)}% operational</p>
+                  <p className="text-green-100 mt-1">
+                    {dashboardStats.totalSources > 0 ? 
+                      ((dashboardStats.activeSources / dashboardStats.totalSources) * 100).toFixed(1) : 0}% operational
+                  </p>
                 </CardContent>
               </Card>
 
@@ -234,7 +268,7 @@ const Index = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{dashboardStats.avgRecommendationScore}%</div>
+                  <div className="text-3xl font-bold">{dashboardStats.avgRecommendationScore.toFixed(1)}%</div>
                   <p className="text-purple-100 mt-1">Recommendation score</p>
                 </CardContent>
               </Card>
@@ -247,7 +281,7 @@ const Index = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{dashboardStats.complianceCoverage}%</div>
+                  <div className="text-3xl font-bold text-gray-900">{dashboardStats.complianceCoverage.toFixed(1)}%</div>
                   <p className="text-gray-600 mt-1">Sources compliant</p>
                 </CardContent>
               </Card>
@@ -278,44 +312,6 @@ const Index = () => {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <RefreshCw className="h-5 w-5" />
-                  <span>Recent Activity</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="font-medium">UAE Chamber of Commerce updated</p>
-                      <p className="text-sm text-gray-600">Recommendation score increased to 92%</p>
-                    </div>
-                    <span className="text-sm text-gray-500 ml-auto">2 hours ago</span>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                    <div>
-                      <p className="font-medium">Jordan Companies Registry maintenance</p>
-                      <p className="text-sm text-gray-600">Source temporarily unavailable</p>
-                    </div>
-                    <span className="text-sm text-gray-500 ml-auto">5 hours ago</span>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                    <Plus className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">New source discovered</p>
-                      <p className="text-sm text-gray-600">Morocco Commercial Registry identified via AI</p>
-                    </div>
-                    <span className="text-sm text-gray-500 ml-auto">1 day ago</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Repository Tab */}
@@ -345,10 +341,9 @@ const Index = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Countries</SelectItem>
-                      <SelectItem value="UAE">UAE</SelectItem>
-                      <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
-                      <SelectItem value="Egypt">Egypt</SelectItem>
-                      <SelectItem value="Jordan">Jordan</SelectItem>
+                      {Array.from(new Set(sources.map(s => s.country))).map(country => (
+                        <SelectItem key={country} value={country}>{country}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <Select value={selectedType} onValueChange={setSelectedType}>
@@ -358,6 +353,7 @@ const Index = () => {
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="Governmental">Governmental</SelectItem>
+                      <SelectItem value="Ministry">Ministry</SelectItem>
                       <SelectItem value="Chamber">Chamber</SelectItem>
                       <SelectItem value="Stock Exchange">Stock Exchange</SelectItem>
                       <SelectItem value="Non-governmental">Non-governmental</SelectItem>
@@ -380,101 +376,114 @@ const Index = () => {
 
             {/* Sources List */}
             <div className="grid gap-6">
-              {filteredSources.map((source) => (
-                <Card key={source.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-3">
-                          <CardTitle className="text-xl">{source.name}</CardTitle>
-                          {source.adipSource && (
-                            <Badge className="bg-blue-100 text-blue-800">ADIP Source</Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span className="flex items-center space-x-1">
-                            <Globe className="h-4 w-4" />
-                            <span>{source.country}</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <Building2 className="h-4 w-4" />
-                            <span>{source.type}</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <Users className="h-4 w-4" />
-                            <span>{source.companiesExpected.toLocaleString()} companies</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>Updated {source.lastUpdated}</span>
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Status</span>
-                          <Badge className={getStatusColor(source.status)}>
-                            {source.status}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Compliance</span>
-                          <Badge className={getComplianceColor(source.compliance)}>
-                            {source.compliance}
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Grade</span>
-                          <span className={`text-lg font-bold ${getGradeColor(source.grade)}`}>
-                            {source.grade}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">Recommendation Score</span>
-                            <span className="text-sm font-bold">{source.recommendationScore}%</span>
+              {filteredSources.map((source) => {
+                const dataPoints = getDataPointsList(source.data_points?.[0]);
+                return (
+                  <Card key={source.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-3">
+                            <CardTitle className="text-xl">{source.source_name}</CardTitle>
+                            {source.adip_source && (
+                              <Badge className="bg-blue-100 text-blue-800">ADIP Source</Badge>
+                            )}
                           </div>
-                          <Progress value={source.recommendationScore} className="h-2" />
+                          <div className="flex items-center space-x-4 text-sm text-gray-600">
+                            <span className="flex items-center space-x-1">
+                              <Globe className="h-4 w-4" />
+                              <span>{source.country}</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                              <Building2 className="h-4 w-4" />
+                              <span>{source.source_type}</span>
+                            </span>
+                            {source.expected_companies && (
+                              <span className="flex items-center space-x-1">
+                                <Users className="h-4 w-4" />
+                                <span>{source.expected_companies.toLocaleString()} companies</span>
+                              </span>
+                            )}
+                            <span className="flex items-center space-x-1">
+                              <Calendar className="h-4 w-4" />
+                              <span>Updated {new Date(source.updated_at).toLocaleDateString()}</span>
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <span className="text-sm font-medium">Available Data Points</span>
-                        <div className="flex flex-wrap gap-1">
-                          {source.dataPoints.slice(0, 3).map((point, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {point}
-                            </Badge>
-                          ))}
-                          {source.dataPoints.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{source.dataPoints.length - 3} more
-                            </Badge>
+                        <div className="flex items-center space-x-2">
+                          {source.source_hyperlink && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={source.source_hyperlink} target="_blank" rel="noopener noreferrer">
+                                <Eye className="h-4 w-4" />
+                              </a>
+                            </Button>
                           )}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setEditingSource(source);
+                              setIsFormOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Status</span>
+                            <Badge className={getStatusColor(source.status)}>
+                              {source.status}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Compliance</span>
+                            <Badge className={getComplianceColor(source.compliance_status)}>
+                              {source.compliance_status}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Grade</span>
+                            <span className={`text-lg font-bold ${getGradeColor(source.source_grade)}`}>
+                              {source.source_grade || 'N/A'}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Recommendation Score</span>
+                              <span className="text-sm font-bold">{source.recommendation_score}%</span>
+                            </div>
+                            <Progress value={source.recommendation_score} className="h-2" />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <span className="text-sm font-medium">Available Data Points</span>
+                          <div className="flex flex-wrap gap-1">
+                            {dataPoints.slice(0, 3).map((point, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {point}
+                              </Badge>
+                            ))}
+                            {dataPoints.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{dataPoints.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </TabsContent>
 
@@ -494,25 +503,31 @@ const Index = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Search Criteria</label>
-                    <Input placeholder="Enter keywords, regions, or source types..." />
+                    <Input 
+                      placeholder="Enter keywords, regions, or source types..." 
+                      value={discoveryForm.keywords}
+                      onChange={(e) => setDiscoveryForm(prev => ({ ...prev, keywords: e.target.value }))}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Country/Region</label>
-                      <Select>
+                      <Select value={discoveryForm.region} onValueChange={(value) => setDiscoveryForm(prev => ({ ...prev, region: value }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select region" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="middle-east">Middle East</SelectItem>
                           <SelectItem value="africa">Africa</SelectItem>
-                          <SelectItem value="global">Global</SelectItem>
+                          <SelectItem value="morocco">Morocco</SelectItem>
+                          <SelectItem value="tunisia">Tunisia</SelectItem>
+                          <SelectItem value="kuwait">Kuwait</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Source Type</label>
-                      <Select>
+                      <Select value={discoveryForm.sourceType} onValueChange={(value) => setDiscoveryForm(prev => ({ ...prev, sourceType: value }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
@@ -525,9 +540,17 @@ const Index = () => {
                       </Select>
                     </div>
                   </div>
-                  <Button className="w-full">
-                    <Bot className="h-4 w-4 mr-2" />
-                    Start AI Discovery
+                  <Button 
+                    className="w-full" 
+                    onClick={handleStartDiscovery}
+                    disabled={isDiscovering}
+                  >
+                    {isDiscovering ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Bot className="h-4 w-4 mr-2" />
+                    )}
+                    {isDiscovering ? 'Discovering...' : 'Start AI Discovery'}
                   </Button>
                 </CardContent>
               </Card>
@@ -543,46 +566,13 @@ const Index = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Source URL</label>
-                    <Input placeholder="https://example.com/business-registry" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Source Name</label>
-                    <Input placeholder="Source display name" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Country</label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select country" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="uae">UAE</SelectItem>
-                          <SelectItem value="saudi">Saudi Arabia</SelectItem>
-                          <SelectItem value="egypt">Egypt</SelectItem>
-                          <SelectItem value="jordan">Jordan</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Type</label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="governmental">Governmental</SelectItem>
-                          <SelectItem value="chamber">Chamber</SelectItem>
-                          <SelectItem value="stock-exchange">Stock Exchange</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => setIsFormOpen(true)}
+                  >
                     <FileText className="h-4 w-4 mr-2" />
-                    Analyze & Add Source
+                    Add New Source
                   </Button>
                 </CardContent>
               </Card>
@@ -598,23 +588,19 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[
-                    { name: "Morocco Commercial Registry", url: "registre-commerce.ma", score: 78, status: "Pending" },
-                    { name: "Tunisia Business Portal", url: "investintunisia.tn", score: 65, status: "Under Review" },
-                    { name: "Kuwait Chamber of Commerce", url: "kcci.org.kw", score: 82, status: "Approved" }
-                  ].map((source, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  {discoveryLogs?.slice(0, 5).map((log) => (
+                    <div key={log.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="font-medium">{source.name}</p>
-                        <p className="text-sm text-gray-600">{source.url}</p>
+                        <p className="font-medium">{log.search_criteria}</p>
+                        <p className="text-sm text-gray-600">{log.discovered_url}</p>
                       </div>
                       <div className="flex items-center space-x-3">
                         <div className="text-right">
-                          <p className="text-sm font-medium">{source.score}%</p>
+                          <p className="text-sm font-medium">{log.confidence_score}%</p>
                           <p className="text-xs text-gray-500">Confidence</p>
                         </div>
-                        <Badge variant={source.status === 'Approved' ? 'default' : 'secondary'}>
-                          {source.status}
+                        <Badge variant={log.status === 'Approved' ? 'default' : 'secondary'}>
+                          {log.status}
                         </Badge>
                       </div>
                     </div>
@@ -638,30 +624,12 @@ const Index = () => {
                   <div className="space-y-3">
                     <h4 className="font-medium">Scoring Classes & Weights</h4>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
-                        <span className="text-sm">Company Information</span>
-                        <Badge>50% Weight</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-green-50 rounded">
-                        <span className="text-sm">Company Identification</span>
-                        <Badge variant="secondary">10% Weight</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
-                        <span className="text-sm">Business Classification</span>
-                        <Badge variant="secondary">10% Weight</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-purple-50 rounded">
-                        <span className="text-sm">Shareholder Information</span>
-                        <Badge variant="secondary">10% Weight</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-indigo-50 rounded">
-                        <span className="text-sm">Director Information</span>
-                        <Badge variant="secondary">10% Weight</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-orange-50 rounded">
-                        <span className="text-sm">Employment & Financials</span>
-                        <Badge variant="secondary">10% Weight</Badge>
-                      </div>
+                      {gradingClasses.map((gradingClass, index) => (
+                        <div key={index} className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                          <span className="text-sm">{gradingClass.name}</span>
+                          <Badge>{(gradingClass.weight * 100)}% Weight</Badge>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="pt-4 border-t">
@@ -681,34 +649,20 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">A+ Grade (90-100%)</span>
-                        <span className="text-sm text-gray-600">234 sources</span>
+                    {[
+                      { grade: 'A+ Grade (90-100%)', count: sources.filter(s => s.recommendation_score >= 90).length },
+                      { grade: 'A Grade (80-89%)', count: sources.filter(s => s.recommendation_score >= 80 && s.recommendation_score < 90).length },
+                      { grade: 'B Grade (70-79%)', count: sources.filter(s => s.recommendation_score >= 70 && s.recommendation_score < 80).length },
+                      { grade: 'C Grade (50-69%)', count: sources.filter(s => s.recommendation_score >= 50 && s.recommendation_score < 70).length },
+                    ].map(({ grade, count }) => (
+                      <div key={grade} className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{grade}</span>
+                          <span className="text-sm text-gray-600">{count} sources</span>
+                        </div>
+                        <Progress value={sources.length > 0 ? (count / sources.length) * 100 : 0} className="h-2" />
                       </div>
-                      <Progress value={18.8} className="h-2" />
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">A Grade (80-89%)</span>
-                        <span className="text-sm text-gray-600">456 sources</span>
-                      </div>
-                      <Progress value={36.6} className="h-2" />
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">B Grade (70-79%)</span>
-                        <span className="text-sm text-gray-600">378 sources</span>
-                      </div>
-                      <Progress value={30.3} className="h-2" />
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">C Grade (50-69%)</span>
-                        <span className="text-sm text-gray-600">179 sources</span>
-                      </div>
-                      <Progress value={14.3} className="h-2" />
-                    </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -732,7 +686,7 @@ const Index = () => {
                     <p className="text-sm text-gray-600 mt-1">Analysis Accuracy</p>
                   </div>
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">1,247</div>
+                    <div className="text-2xl font-bold text-blue-600">{sources.length}</div>
                     <p className="text-sm text-gray-600 mt-1">Sources Analyzed</p>
                   </div>
                   <div className="text-center p-4 bg-purple-50 rounded-lg">
@@ -755,9 +709,11 @@ const Index = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-600">1,175</div>
+                  <div className="text-3xl font-bold text-green-600">
+                    {sources.filter(s => s.compliance_status === 'Compliant').length}
+                  </div>
                   <p className="text-sm text-gray-600 mt-1">Sources with clear T&C</p>
-                  <Progress value={94.2} className="h-2 mt-3" />
+                  <Progress value={dashboardStats.complianceCoverage} className="h-2 mt-3" />
                 </CardContent>
               </Card>
 
@@ -769,9 +725,11 @@ const Index = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-yellow-600">57</div>
+                  <div className="text-3xl font-bold text-yellow-600">
+                    {sources.filter(s => s.compliance_status === 'Under Review').length}
+                  </div>
                   <p className="text-sm text-gray-600 mt-1">Pending legal review</p>
-                  <Progress value={4.6} className="h-2 mt-3" />
+                  <Progress value={sources.length > 0 ? (sources.filter(s => s.compliance_status === 'Under Review').length / sources.length) * 100 : 0} className="h-2 mt-3" />
                 </CardContent>
               </Card>
 
@@ -783,9 +741,11 @@ const Index = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-red-600">15</div>
+                  <div className="text-3xl font-bold text-red-600">
+                    {sources.filter(s => s.compliance_status === 'Non-Compliant').length}
+                  </div>
                   <p className="text-sm text-gray-600 mt-1">Restricted usage</p>
-                  <Progress value={1.2} className="h-2 mt-3" />
+                  <Progress value={sources.length > 0 ? (sources.filter(s => s.compliance_status === 'Non-Compliant').length / sources.length) * 100 : 0} className="h-2 mt-3" />
                 </CardContent>
               </Card>
             </div>
@@ -841,41 +801,6 @@ const Index = () => {
                         <span className="text-sm">Regular Compliance Audits</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Compliance Updates */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Compliance Updates</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <div className="flex-1">
-                      <p className="font-medium">UAE Data Protection Law Compliance</p>
-                      <p className="text-sm text-gray-600">15 sources updated with new privacy requirements</p>
-                    </div>
-                    <span className="text-sm text-gray-500">Today</span>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
-                    <Clock className="h-5 w-5 text-yellow-600" />
-                    <div className="flex-1">
-                      <p className="font-medium">GDPR Article 6 Review</p>
-                      <p className="text-sm text-gray-600">8 EU-based sources require legal basis documentation</p>
-                    </div>
-                    <span className="text-sm text-gray-500">2 days ago</span>
-                  </div>
-                  <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                    <div className="flex-1">
-                      <p className="font-medium">Terms & Conditions Update</p>
-                      <p className="text-sm text-gray-600">Saudi sources updated with new usage restrictions</p>
-                    </div>
-                    <span className="text-sm text-gray-500">1 week ago</span>
                   </div>
                 </div>
               </CardContent>
