@@ -45,7 +45,6 @@ export const DataCollectionTab = () => {
     if (filters.adip_source !== undefined && source.adip_source !== filters.adip_source) return false;
     if (filters.needs_review !== undefined && source.needs_review !== filters.needs_review) return false;
     if (filters.crawled !== undefined && source.crawled !== filters.crawled) return false;
-    if (filters.status?.length && !filters.status.includes(source.status)) return false;
     if (filters.source_type?.length && !filters.source_type.includes(source.source_type)) return false;
     if (filters.compliance_status?.length && !filters.compliance_status.includes(source.compliance_status)) return false;
 
@@ -106,16 +105,17 @@ export const DataCollectionTab = () => {
     return editableSources[source.id]?.[field] ?? source[field];
   };
 
-  const getStatusIcon = (source: any) => {
-    if (source.approved) return <CheckCircle className="h-4 w-4 text-green-600" />;
-    if (source.needs_review) return <Clock className="h-4 w-4 text-yellow-600" />;
-    return <AlertCircle className="h-4 w-4 text-red-600" />;
-  };
-
-  const getStatusBadge = (source: any) => {
-    if (source.approved) return <Badge variant="default">Approved</Badge>;
-    if (source.needs_review) return <Badge variant="secondary">Review</Badge>;
-    return <Badge variant="destructive">Rejected</Badge>;
+  const getProgressStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge className="bg-green-600">Completed</Badge>;
+      case 'in progress':
+        return <Badge className="bg-blue-600">In Progress</Badge>;
+      case 'approved':
+        return <Badge className="bg-purple-600">Approved</Badge>;
+      default:
+        return <Badge variant="outline">Not Started</Badge>;
+    }
   };
 
   const clearFilters = () => {
@@ -136,17 +136,23 @@ export const DataCollectionTab = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Data Collection</h2>
+          <p className="text-muted-foreground mt-2">
+            Manage and track your data sources with comprehensive filtering and approval workflow
+          </p>
+        </div>
         <div className="flex gap-2">
-          <Button onClick={() => setIsSimpleAddOpen(true)} variant="outline">
+          <Button onClick={() => setIsSimpleAddOpen(true)} variant="outline" className="shadow-sm">
             <Plus className="h-4 w-4 mr-2" />
             Quick Add
           </Button>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button onClick={() => setIsCreateDialogOpen(true)} className="shadow-sm">
             <Plus className="h-4 w-4 mr-2" />
             Create Source
           </Button>
           <Dialog open={isDiscoveryOpen} onOpenChange={setIsDiscoveryOpen}>
-            <Button onClick={() => setIsDiscoveryOpen(true)} variant="outline">
+            <Button onClick={() => setIsDiscoveryOpen(true)} variant="outline" className="shadow-sm">
               <Activity className="h-4 w-4 mr-2" />
               Automated Discovery
             </Button>
@@ -155,44 +161,44 @@ export const DataCollectionTab = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="shadow-sm border-l-4 border-l-blue-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Sources</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Sources</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{sources.length}</div>
+            <div className="text-3xl font-bold text-blue-600">{sources.length}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-sm border-l-4 border-l-green-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Approved</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-3xl font-bold text-green-600">
               {sources.filter((s: any) => s.approved).length}
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-sm border-l-4 border-l-yellow-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Needs Review</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Needs Review</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-3xl font-bold text-yellow-600">
               {sources.filter((s: any) => s.needs_review).length}
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-sm border-l-4 border-l-purple-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Assigned</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Assigned</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-3xl font-bold text-purple-600">
               {sources.filter((s: any) => s.assigned_to).length}
             </div>
           </CardContent>
@@ -208,7 +214,7 @@ export const DataCollectionTab = () => {
               placeholder="Search sources by name or country..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 shadow-sm"
             />
           </div>
         </div>
@@ -221,15 +227,17 @@ export const DataCollectionTab = () => {
       </div>
 
       {/* Sources Table */}
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>Sources ({filteredSources.length})</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-blue-600" />
+            Sources ({filteredSources.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Status</TableHead>
                 <TableHead>Source Name</TableHead>
                 <TableHead>Country</TableHead>
                 <TableHead>Type</TableHead>
@@ -242,34 +250,18 @@ export const DataCollectionTab = () => {
             </TableHeader>
             <TableBody>
               {filteredSources.map((source: any) => (
-                <TableRow key={source.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(source)}
-                      <Select 
-                        value={getFieldValue(source, 'status')} 
-                        onValueChange={(value) => handleFieldChange(source.id, 'status', value)}
-                      >
-                        <SelectTrigger className="border-none">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Active">Active</SelectItem>
-                          <SelectItem value="Inactive">Inactive</SelectItem>
-                          <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </TableCell>
+                <TableRow key={source.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium">
-                    <Input
-                      value={getFieldValue(source, 'source_name')}
-                      onChange={(e) => handleFieldChange(source.id, 'source_name', e.target.value)}
-                      className="border-none p-0 h-auto"
-                    />
-                    {source.auto_populated && (
-                      <Badge variant="outline" className="ml-2 text-xs">AI</Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={getFieldValue(source, 'source_name')}
+                        onChange={(e) => handleFieldChange(source.id, 'source_name', e.target.value)}
+                        className="border-none p-0 h-auto font-medium"
+                      />
+                      {source.auto_populated && (
+                        <Badge variant="outline" className="ml-2 text-xs bg-blue-50 text-blue-600">AI</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Input
@@ -357,6 +349,7 @@ export const DataCollectionTab = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(source)}
+                        className="shadow-sm"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -364,6 +357,7 @@ export const DataCollectionTab = () => {
                         variant="destructive"
                         size="sm"
                         onClick={() => handleDelete(source.id)}
+                        className="shadow-sm"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

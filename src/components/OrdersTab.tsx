@@ -8,7 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Download, Plus, Play, FileText } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Download, Plus, Bot, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Order {
@@ -21,7 +23,7 @@ interface Order {
   dateIn: string;
   clientDueDate: string;
   status: 'Pending' | 'In Progress' | 'Completed' | 'Not Started';
-  deepResearch: 'Not Started' | 'In Progress' | 'Completed';
+  assignedTo?: string;
 }
 
 const mockOrders: Order[] = [
@@ -35,7 +37,7 @@ const mockOrders: Order[] = [
     dateIn: '30/05/2025 11:17 PM',
     clientDueDate: '30/05/2025',
     status: 'Pending',
-    deepResearch: 'Not Started'
+    assignedTo: 'Achref Messaoudi'
   },
   {
     no: 2,
@@ -47,7 +49,7 @@ const mockOrders: Order[] = [
     dateIn: '30/05/2025 10:52 PM',
     clientDueDate: '30/05/2025',
     status: 'In Progress',
-    deepResearch: 'In Progress'
+    assignedTo: 'Meriem Frej'
   },
   {
     no: 3,
@@ -59,7 +61,7 @@ const mockOrders: Order[] = [
     dateIn: '30/05/2025 10:48 PM',
     clientDueDate: '30/05/2025',
     status: 'Completed',
-    deepResearch: 'Completed'
+    assignedTo: 'Achref Messaoudi'
   },
   {
     no: 4,
@@ -71,7 +73,7 @@ const mockOrders: Order[] = [
     dateIn: '30/05/2025 10:47 PM',
     clientDueDate: '30/05/2025',
     status: 'Completed',
-    deepResearch: 'Completed'
+    assignedTo: 'Meriem Frej'
   },
   {
     no: 5,
@@ -83,7 +85,7 @@ const mockOrders: Order[] = [
     dateIn: '30/05/2025 10:39 PM',
     clientDueDate: '30/05/2025',
     status: 'Completed',
-    deepResearch: 'Completed'
+    assignedTo: 'Achref Messaoudi'
   },
   {
     no: 6,
@@ -95,7 +97,7 @@ const mockOrders: Order[] = [
     dateIn: '30/05/2025 08:31 PM',
     clientDueDate: '30/05/2025',
     status: 'Completed',
-    deepResearch: 'Completed'
+    assignedTo: 'Meriem Frej'
   },
   {
     no: 7,
@@ -107,7 +109,7 @@ const mockOrders: Order[] = [
     dateIn: '30/05/2025 08:11 PM',
     clientDueDate: '30/05/2025',
     status: 'Completed',
-    deepResearch: 'Completed'
+    assignedTo: 'Achref Messaoudi'
   },
   {
     no: 8,
@@ -118,8 +120,7 @@ const mockOrders: Order[] = [
     country: 'United Arab Emirates (the)',
     dateIn: '30/05/2025 07:45 PM',
     clientDueDate: '31/05/2025',
-    status: 'Not Started',
-    deepResearch: 'Not Started'
+    status: 'Not Started'
   },
   {
     no: 9,
@@ -130,14 +131,16 @@ const mockOrders: Order[] = [
     country: 'Saudi Arabia',
     dateIn: '30/05/2025 07:30 PM',
     clientDueDate: '01/06/2025',
-    status: 'Pending',
-    deepResearch: 'Not Started'
+    status: 'Pending'
   }
 ];
 
 export const OrdersTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
+  const [deepResearchProgress, setDeepResearchProgress] = useState<Record<string, number>>({});
+  const [orders, setOrders] = useState(mockOrders);
+  const [editableOrders, setEditableOrders] = useState<Record<string, any>>({});
   const [newOrder, setNewOrder] = useState({
     client: '',
     subject: '',
@@ -146,7 +149,7 @@ export const OrdersTab = () => {
     notes: ''
   });
   
-  const filteredOrders = mockOrders.filter(order =>
+  const filteredOrders = orders.filter(order =>
     order.order.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.uid.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -169,21 +172,49 @@ export const OrdersTab = () => {
     }
   };
 
-  const getDeepResearchBadge = (status: string) => {
-    switch (status) {
-      case 'Completed':
-        return <Badge className="bg-blue-500">Completed</Badge>;
-      case 'In Progress':
-        return <Badge className="bg-orange-500">In Progress</Badge>;
-      case 'Not Started':
-        return <Badge variant="outline">Not Started</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  const handleFieldChange = (orderId: string, field: string, value: any) => {
+    setEditableOrders(prev => ({
+      ...prev,
+      [orderId]: {
+        ...prev[orderId],
+        [field]: value
+      }
+    }));
+    
+    // Update the orders array as well
+    setOrders(prev => prev.map(order => 
+      order.order === orderId 
+        ? { ...order, [field]: value }
+        : order
+    ));
+    
+    toast.success(`Updated ${field}`);
   };
 
-  const handleStartOrder = (order: Order) => {
-    toast.success(`Started processing order ${order.order}`);
+  const getFieldValue = (order: Order, field: string) => {
+    return editableOrders[order.order]?.[field] ?? (order as any)[field];
+  };
+
+  const handleStartDeepResearch = async (order: Order) => {
+    // Update status to in progress
+    handleFieldChange(order.order, 'status', 'In Progress');
+    
+    setDeepResearchProgress(prev => ({ ...prev, [order.order]: 0 }));
+    
+    // Simulate progress
+    for (let i = 0; i <= 100; i += 10) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setDeepResearchProgress(prev => ({ ...prev, [order.order]: i }));
+    }
+    
+    // Complete the research
+    setDeepResearchProgress(prev => {
+      const { [order.order]: _, ...rest } = prev;
+      return rest;
+    });
+    
+    handleFieldChange(order.order, 'status', 'Completed');
+    toast.success(`Deep research completed for order ${order.order}`);
   };
 
   const handleDownloadOrder = (order: Order) => {
@@ -211,28 +242,28 @@ export const OrdersTab = () => {
     });
   };
 
-  const totalOrders = mockOrders.length;
-  const completedOrders = mockOrders.filter(o => o.status === 'Completed').length;
-  const inProgressOrders = mockOrders.filter(o => o.status === 'In Progress').length;
-  const pendingOrders = mockOrders.filter(o => o.status === 'Pending').length;
+  const totalOrders = orders.length;
+  const completedOrders = orders.filter(o => o.status === 'Completed').length;
+  const inProgressOrders = orders.filter(o => o.status === 'In Progress').length;
+  const pendingOrders = orders.filter(o => o.status === 'Pending').length;
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Orders</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Orders</h2>
+          <p className="text-muted-foreground mt-2">
             Manage client orders and deep research requests
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExportExcel}>
+          <Button variant="outline" onClick={handleExportExcel} className="shadow-sm">
             <Download className="h-4 w-4 mr-2" />
             Export to Excel
           </Button>
           <Dialog open={isNewOrderOpen} onOpenChange={setIsNewOrderOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="shadow-sm">
                 <Plus className="h-4 w-4 mr-2" />
                 New Order
               </Button>
@@ -296,50 +327,41 @@ export const OrdersTab = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="flex items-center justify-between">
-        <div className="text-lg font-semibold">Total: {totalOrders}</div>
-        <Button variant="outline" onClick={handleExportExcel}>
-          <Download className="h-4 w-4 mr-2" />
-          Export to Excel
-        </Button>
-      </div>
-
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="shadow-sm border-l-4 border-l-blue-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalOrders}</div>
+            <div className="text-3xl font-bold text-blue-600">{totalOrders}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-sm border-l-4 border-l-green-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Completed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedOrders}</div>
+            <div className="text-3xl font-bold text-green-600">{completedOrders}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-sm border-l-4 border-l-blue-400">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">In Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{inProgressOrders}</div>
+            <div className="text-3xl font-bold text-blue-400">{inProgressOrders}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-sm border-l-4 border-l-orange-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Pending</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{pendingOrders}</div>
+            <div className="text-3xl font-bold text-orange-600">{pendingOrders}</div>
           </CardContent>
         </Card>
       </div>
@@ -351,12 +373,18 @@ export const OrdersTab = () => {
           placeholder="Search orders..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
+          className="pl-10 shadow-sm"
         />
       </div>
 
       {/* Orders Table */}
-      <Card>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-blue-600" />
+            Orders ({filteredOrders.length})
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -369,14 +397,14 @@ export const OrdersTab = () => {
                 <TableHead>Country</TableHead>
                 <TableHead>Date In</TableHead>
                 <TableHead>Client Due Date</TableHead>
+                <TableHead>Assigned To</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Deep Research</TableHead>
-                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredOrders.map((order) => (
-                <TableRow key={order.order}>
+                <TableRow key={order.order} className="hover:bg-gray-50">
                   <TableCell>{order.no}</TableCell>
                   <TableCell className="font-medium">{order.order}</TableCell>
                   <TableCell className="text-blue-600 font-medium">{order.uid}</TableCell>
@@ -385,26 +413,46 @@ export const OrdersTab = () => {
                   <TableCell>{order.country}</TableCell>
                   <TableCell>{order.dateIn}</TableCell>
                   <TableCell>{order.clientDueDate}</TableCell>
-                  <TableCell>{getStatusBadge(order.status)}</TableCell>
-                  <TableCell>{getDeepResearchBadge(order.deepResearch)}</TableCell>
+                  <TableCell>
+                    <Select 
+                      value={getFieldValue(order, 'assignedTo') || ''} 
+                      onValueChange={(value) => handleFieldChange(order.order, 'assignedTo', value)}
+                    >
+                      <SelectTrigger className="border-none">
+                        <SelectValue placeholder="Assign to..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="achref messaoudi">Achref Messaoudi</SelectItem>
+                        <SelectItem value="meriem frej">Meriem Frej</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(getFieldValue(order, 'status'))}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      {order.status === 'Not Started' || order.deepResearch === 'Not Started' ? (
+                      {deepResearchProgress[order.order] !== undefined ? (
+                        <div className="w-32">
+                          <Progress value={deepResearchProgress[order.order]} className="h-8" />
+                        </div>
+                      ) : order.status === 'Not Started' || order.status === 'Pending' ? (
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleStartOrder(order)}
+                          onClick={() => handleStartDeepResearch(order)}
+                          className="shadow-sm"
                         >
-                          <Play className="h-4 w-4" />
-                          Start
+                          <Bot className="h-4 w-4 mr-1" />
+                          Start AI
                         </Button>
                       ) : (
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={() => handleDownloadOrder(order)}
+                          className="shadow-sm"
                         >
                           <Download className="h-4 w-4" />
+                          Download
                         </Button>
                       )}
                     </div>
