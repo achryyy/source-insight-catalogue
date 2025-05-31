@@ -1,4 +1,3 @@
-
 export interface DataSource {
   id: string;
   country: string;
@@ -32,6 +31,8 @@ export interface DataSource {
   last_crawled_date?: string;
   needs_review: boolean;
   auto_populated: boolean;
+  assigned_to?: string;
+  progress_status?: 'not started' | 'in progress' | 'completed' | 'approved';
   created_at: string;
   updated_at: string;
 }

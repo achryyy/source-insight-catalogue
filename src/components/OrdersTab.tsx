@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Download, Plus, Play } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Search, Download, Plus, Play, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Order {
   no: number;
@@ -133,6 +137,14 @@ const mockOrders: Order[] = [
 
 export const OrdersTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
+  const [newOrder, setNewOrder] = useState({
+    client: '',
+    subject: '',
+    country: '',
+    dueDate: '',
+    notes: ''
+  });
   
   const filteredOrders = mockOrders.filter(order =>
     order.order.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -170,6 +182,35 @@ export const OrdersTab = () => {
     }
   };
 
+  const handleStartOrder = (order: Order) => {
+    toast.success(`Started processing order ${order.order}`);
+  };
+
+  const handleDownloadOrder = (order: Order) => {
+    toast.success(`Downloading order ${order.order} report`);
+  };
+
+  const handleExportExcel = () => {
+    toast.success('Exporting orders to Excel...');
+  };
+
+  const handleCreateOrder = () => {
+    if (!newOrder.client || !newOrder.country) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    toast.success('New order created successfully');
+    setIsNewOrderOpen(false);
+    setNewOrder({
+      client: '',
+      subject: '',
+      country: '',
+      dueDate: '',
+      notes: ''
+    });
+  };
+
   const totalOrders = mockOrders.length;
   const completedOrders = mockOrders.filter(o => o.status === 'Completed').length;
   const inProgressOrders = mockOrders.filter(o => o.status === 'In Progress').length;
@@ -185,21 +226,80 @@ export const OrdersTab = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportExcel}>
             <Download className="h-4 w-4 mr-2" />
             Export to Excel
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Order
-          </Button>
+          <Dialog open={isNewOrderOpen} onOpenChange={setIsNewOrderOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Order
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Order</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="client">Client *</Label>
+                  <Input
+                    id="client"
+                    value={newOrder.client}
+                    onChange={(e) => setNewOrder(prev => ({ ...prev, client: e.target.value }))}
+                    placeholder="Enter client name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="subject">Subject</Label>
+                  <Input
+                    id="subject"
+                    value={newOrder.subject}
+                    onChange={(e) => setNewOrder(prev => ({ ...prev, subject: e.target.value }))}
+                    placeholder="Enter subject/company name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="country">Country *</Label>
+                  <Input
+                    id="country"
+                    value={newOrder.country}
+                    onChange={(e) => setNewOrder(prev => ({ ...prev, country: e.target.value }))}
+                    placeholder="Enter country"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dueDate">Due Date</Label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={newOrder.dueDate}
+                    onChange={(e) => setNewOrder(prev => ({ ...prev, dueDate: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={newOrder.notes}
+                    onChange={(e) => setNewOrder(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Additional notes..."
+                  />
+                </div>
+                <Button onClick={handleCreateOrder} className="w-full">
+                  Create Order
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
       {/* Stats */}
       <div className="flex items-center justify-between">
         <div className="text-lg font-semibold">Total: {totalOrders}</div>
-        <Button variant="outline">
+        <Button variant="outline" onClick={handleExportExcel}>
           <Download className="h-4 w-4 mr-2" />
           Export to Excel
         </Button>
@@ -290,12 +390,20 @@ export const OrdersTab = () => {
                   <TableCell>
                     <div className="flex gap-1">
                       {order.status === 'Not Started' || order.deepResearch === 'Not Started' ? (
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleStartOrder(order)}
+                        >
                           <Play className="h-4 w-4" />
                           Start
                         </Button>
                       ) : (
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadOrder(order)}
+                        >
                           <Download className="h-4 w-4" />
                         </Button>
                       )}

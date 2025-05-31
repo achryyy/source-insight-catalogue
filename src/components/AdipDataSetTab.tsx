@@ -5,7 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Download, FileText, Globe, CheckCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Search, Download, FileText, Globe, CheckCircle, ExternalLink, RefreshCw, Activity } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AdipDataset {
   id: string;
@@ -14,9 +17,10 @@ interface AdipDataset {
   category: string;
   records: number;
   lastUpdated: string;
-  status: 'Active' | 'Processing' | 'Pending';
+  status: 'Active' | 'Inactive' | 'Under Maintenance';
   format: string;
   size: string;
+  url: string;
 }
 
 const mockAdipData: AdipDataset[] = [
@@ -29,7 +33,8 @@ const mockAdipData: AdipDataset[] = [
     lastUpdated: '2025-05-30',
     status: 'Active',
     format: 'JSON',
-    size: '2.3 GB'
+    size: '2.3 GB',
+    url: 'https://uae-commercial-registry.gov.ae'
   },
   {
     id: '2',
@@ -40,7 +45,8 @@ const mockAdipData: AdipDataset[] = [
     lastUpdated: '2025-05-29',
     status: 'Active',
     format: 'XML',
-    size: '1.8 GB'
+    size: '1.8 GB',
+    url: 'https://saudi-corporate-db.gov.sa'
   },
   {
     id: '3',
@@ -49,9 +55,10 @@ const mockAdipData: AdipDataset[] = [
     category: 'Business Registration',
     records: 67234,
     lastUpdated: '2025-05-28',
-    status: 'Processing',
+    status: 'Under Maintenance',
     format: 'CSV',
-    size: '945 MB'
+    size: '945 MB',
+    url: 'https://egypt-business-dir.gov.eg'
   },
   {
     id: '4',
@@ -62,7 +69,8 @@ const mockAdipData: AdipDataset[] = [
     lastUpdated: '2025-05-27',
     status: 'Active',
     format: 'JSON',
-    size: '567 MB'
+    size: '567 MB',
+    url: 'https://qatar-commercial.gov.qa'
   },
   {
     id: '5',
@@ -71,9 +79,10 @@ const mockAdipData: AdipDataset[] = [
     category: 'Corporate Information',
     records: 45123,
     lastUpdated: '2025-05-26',
-    status: 'Pending',
+    status: 'Inactive',
     format: 'XML',
-    size: '678 MB'
+    size: '678 MB',
+    url: 'https://kuwait-corporate.gov.kw'
   },
   {
     id: '6',
@@ -84,12 +93,65 @@ const mockAdipData: AdipDataset[] = [
     lastUpdated: '2025-05-25',
     status: 'Active',
     format: 'JSON',
-    size: '345 MB'
+    size: '345 MB',
+    url: 'https://bahrain-business.gov.bh'
+  },
+  {
+    id: '7',
+    name: 'Oman Trade Registry',
+    country: 'Oman',
+    category: 'Trade Information',
+    records: 56789,
+    lastUpdated: '2025-05-24',
+    status: 'Active',
+    format: 'XML',
+    size: '890 MB',
+    url: 'https://oman-trade.gov.om'
+  },
+  {
+    id: '8',
+    name: 'Jordan Business Registry',
+    country: 'Jordan',
+    category: 'Business Registration',
+    records: 34521,
+    lastUpdated: '2025-05-23',
+    status: 'Under Maintenance',
+    format: 'JSON',
+    size: '456 MB',
+    url: 'https://jordan-business.gov.jo'
+  },
+  {
+    id: '9',
+    name: 'Morocco Commercial Database',
+    country: 'Morocco',
+    category: 'Commercial Information',
+    records: 78912,
+    lastUpdated: '2025-05-22',
+    status: 'Active',
+    format: 'CSV',
+    size: '1.2 GB',
+    url: 'https://morocco-commercial.gov.ma'
+  },
+  {
+    id: '10',
+    name: 'Tunisia Business Directory',
+    country: 'Tunisia',
+    category: 'Business Registration',
+    records: 43567,
+    lastUpdated: '2025-05-21',
+    status: 'Inactive',
+    format: 'XML',
+    size: '654 MB',
+    url: 'https://tunisia-business.gov.tn'
   }
 ];
 
 export const AdipDataSetTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
+  const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
+  const [discoveryCountry, setDiscoveryCountry] = useState('');
+  const [discoveryKeywords, setDiscoveryKeywords] = useState('');
   
   const filteredData = mockAdipData.filter(dataset =>
     dataset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,12 +163,47 @@ export const AdipDataSetTab = () => {
     switch (status) {
       case 'Active':
         return <Badge variant="default">Active</Badge>;
-      case 'Processing':
-        return <Badge variant="secondary">Processing</Badge>;
-      case 'Pending':
-        return <Badge variant="outline">Pending</Badge>;
+      case 'Under Maintenance':
+        return <Badge variant="secondary">Under Maintenance</Badge>;
+      case 'Inactive':
+        return <Badge variant="outline">Inactive</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const handleCrawl = (dataset: AdipDataset) => {
+    toast.success(`Crawling started for ${dataset.name}`);
+  };
+
+  const handleDownload = (dataset: AdipDataset) => {
+    toast.success(`Downloading ${dataset.name}`);
+  };
+
+  const handleCheckUpdates = async () => {
+    setIsCheckingUpdates(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      toast.success('Update check completed for all datasets');
+    } finally {
+      setIsCheckingUpdates(false);
+    }
+  };
+
+  const handleAutomatedDiscovery = async () => {
+    if (!discoveryCountry || !discoveryKeywords) {
+      toast.error('Please enter both country and keywords');
+      return;
+    }
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      toast.success(`Automated discovery completed for ${discoveryCountry}. Found 3 new potential sources.`);
+      setIsDiscoveryOpen(false);
+      setDiscoveryCountry('');
+      setDiscoveryKeywords('');
+    } catch (error) {
+      toast.error('Discovery failed. Please try again.');
     }
   };
 
@@ -122,10 +219,56 @@ export const AdipDataSetTab = () => {
             Access and manage standardized business data from ADIP sources
           </p>
         </div>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Export All
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleCheckUpdates} disabled={isCheckingUpdates} variant="outline">
+            {isCheckingUpdates ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Check Updates
+          </Button>
+          <Dialog open={isDiscoveryOpen} onOpenChange={setIsDiscoveryOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Activity className="h-4 w-4 mr-2" />
+                Automated Discovery
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Automated Source Discovery</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    value={discoveryCountry}
+                    onChange={(e) => setDiscoveryCountry(e.target.value)}
+                    placeholder="Enter country name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="keywords">Keywords</Label>
+                  <Input
+                    id="keywords"
+                    value={discoveryKeywords}
+                    onChange={(e) => setDiscoveryKeywords(e.target.value)}
+                    placeholder="Enter search keywords"
+                  />
+                </div>
+                <Button onClick={handleAutomatedDiscovery} className="w-full">
+                  Start Discovery
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button>
+            <Download className="h-4 w-4 mr-2" />
+            Export All
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -162,7 +305,7 @@ export const AdipDataSetTab = () => {
             <CardTitle className="text-sm font-medium">Countries</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">6</div>
+            <div className="text-2xl font-bold">10</div>
           </CardContent>
         </Card>
       </div>
@@ -223,11 +366,27 @@ export const AdipDataSetTab = () => {
                   <TableCell>{dataset.size}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleCrawl(dataset)}
+                      >
+                        <Activity className="h-4 w-4" />
+                        Crawl
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDownload(dataset)}
+                      >
                         <Download className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
-                        View
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open(dataset.url, '_blank')}
+                      >
+                        <ExternalLink className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

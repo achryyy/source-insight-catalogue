@@ -6,11 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useDataSourcesWithPoints, useDeleteDataSource } from '@/hooks/useDataSources';
 import { AdvancedFiltersComponent } from '@/components/AdvancedFilters';
 import { EnhancedSourceForm } from '@/components/EnhancedSourceForm';
 import { DataSource, AdvancedFilters } from '@/types/database';
-import { Plus, Edit, Trash2, Search, CheckCircle, Clock, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, CheckCircle, Clock, AlertCircle, RefreshCw, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const DataCollectionTab = () => {
@@ -19,7 +22,12 @@ export const DataCollectionTab = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSimpleAddOpen, setIsSimpleAddOpen] = useState(false);
+  const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
+  const [discoveryCountry, setDiscoveryCountry] = useState('');
+  const [discoveryKeywords, setDiscoveryKeywords] = useState('');
   const [filters, setFilters] = useState<AdvancedFilters>({});
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [copiedAssignee, setCopiedAssignee] = useState('');
 
   const { data: sources = [], isLoading, refetch } = useDataSourcesWithPoints();
   const deleteSource = useDeleteDataSource();
@@ -53,6 +61,48 @@ export const DataCollectionTab = () => {
     if (confirm('Are you sure you want to delete this source?')) {
       deleteSource.mutate(id);
     }
+  };
+
+  const handleAutomatedDiscovery = async () => {
+    if (!discoveryCountry || !discoveryKeywords) {
+      toast.error('Please enter both country and keywords');
+      return;
+    }
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      toast.success(`Automated discovery completed for ${discoveryCountry}. Found 5 new potential sources.`);
+      setIsDiscoveryOpen(false);
+      setDiscoveryCountry('');
+      setDiscoveryKeywords('');
+    } catch (error) {
+      toast.error('Discovery failed. Please try again.');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, sourceId: string) => {
+    if (e.ctrlKey && e.key === 'c') {
+      const source = sources.find((s: any) => s.id === sourceId);
+      if (source?.assigned_to) {
+        setCopiedAssignee(source.assigned_to);
+        navigator.clipboard.writeText(source.assigned_to);
+        toast.success('Assignee copied to clipboard');
+      }
+    }
+    if (e.ctrlKey && e.key === 'v' && copiedAssignee && selectedRows.has(sourceId)) {
+      // In a real app, this would update the database
+      toast.success(`Pasted "${copiedAssignee}" to selected rows`);
+    }
+  };
+
+  const handleRowSelect = (sourceId: string, isSelected: boolean) => {
+    const newSelected = new Set(selectedRows);
+    if (isSelected) {
+      newSelected.add(sourceId);
+    } else {
+      newSelected.delete(sourceId);
+    }
+    setSelectedRows(newSelected);
   };
 
   const getStatusIcon = (source: any) => {
@@ -94,6 +144,12 @@ export const DataCollectionTab = () => {
             <Plus className="h-4 w-4 mr-2" />
             Create Source
           </Button>
+          <Dialog open={isDiscoveryOpen} onOpenChange={setIsDiscoveryOpen}>
+            <Button onClick={() => setIsDiscoveryOpen(true)} variant="outline">
+              <Activity className="h-4 w-4 mr-2" />
+              Automated Discovery
+            </Button>
+          </Dialog>
         </div>
       </div>
 
@@ -132,11 +188,11 @@ export const DataCollectionTab = () => {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Crawled</CardTitle>
+            <CardTitle className="text-sm font-medium">Assigned</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {sources.filter((s: any) => s.crawled).length}
+              {sources.filter((s: any) => s.assigned_to).length}
             </div>
           </CardContent>
         </Card>
@@ -172,13 +228,15 @@ export const DataCollectionTab = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Select</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Source Name</TableHead>
                 <TableHead>Country</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Grade</TableHead>
                 <TableHead>ADIP</TableHead>
-                <TableHead>Crawled</TableHead>
+                <TableHead>Assigned To</TableHead>
+                <TableHead>Progress Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -186,42 +244,94 @@ export const DataCollectionTab = () => {
               {filteredSources.map((source: any) => (
                 <TableRow key={source.id}>
                   <TableCell>
+                    <Checkbox
+                      checked={selectedRows.has(source.id)}
+                      onCheckedChange={(checked) => handleRowSelect(source.id, checked as boolean)}
+                    />
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
                       {getStatusIcon(source)}
                       {getStatusBadge(source)}
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
-                    {source.source_name}
+                    <Input
+                      value={source.source_name}
+                      onChange={() => {}}
+                      className="border-none p-0 h-auto"
+                    />
                     {source.auto_populated && (
                       <Badge variant="outline" className="ml-2 text-xs">AI</Badge>
                     )}
                   </TableCell>
-                  <TableCell>{source.country}</TableCell>
-                  <TableCell>{source.source_type}</TableCell>
                   <TableCell>
-                    {source.source_grade ? (
-                      <Badge variant="secondary">{source.source_grade}</Badge>
-                    ) : '-'}
+                    <Input
+                      value={source.country}
+                      onChange={() => {}}
+                      className="border-none p-0 h-auto"
+                    />
                   </TableCell>
                   <TableCell>
-                    {source.adip_source ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : '-'}
+                    <Select value={source.source_type} onValueChange={() => {}}>
+                      <SelectTrigger className="border-none">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Governmental">Governmental</SelectItem>
+                        <SelectItem value="Ministry">Ministry</SelectItem>
+                        <SelectItem value="Stock Exchange">Stock Exchange</SelectItem>
+                        <SelectItem value="Chamber">Chamber</SelectItem>
+                        <SelectItem value="Non-governmental">Non-governmental</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
-                    {source.crawled ? (
-                      <div className="flex items-center gap-1">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        {source.last_crawled_date && (
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(source.last_crawled_date).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <Clock className="h-4 w-4 text-gray-400" />
-                    )}
+                    <Select value={source.source_grade || ''} onValueChange={() => {}}>
+                      <SelectTrigger className="border-none">
+                        <SelectValue placeholder="Select grade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A">A</SelectItem>
+                        <SelectItem value="B">B</SelectItem>
+                        <SelectItem value="C">C</SelectItem>
+                        <SelectItem value="D">D</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Checkbox
+                      checked={source.adip_source}
+                      onCheckedChange={() => {}}
+                    />
+                  </TableCell>
+                  <TableCell
+                    onKeyDown={(e) => handleKeyDown(e, source.id)}
+                    tabIndex={0}
+                    className="focus:outline-none"
+                  >
+                    <Select value={source.assigned_to || ''} onValueChange={() => {}}>
+                      <SelectTrigger className="border-none">
+                        <SelectValue placeholder="Assign to..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="achref messaoudi">Achref Messaoudi</SelectItem>
+                        <SelectItem value="meriem frej">Meriem Frej</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select value={source.progress_status || 'not started'} onValueChange={() => {}}>
+                      <SelectTrigger className="border-none">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not started">Not Started</SelectItem>
+                        <SelectItem value="in progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -294,6 +404,37 @@ export const DataCollectionTab = () => {
               toast.success('Source added for review');
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDiscoveryOpen} onOpenChange={setIsDiscoveryOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Automated Source Discovery</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="country">Country</Label>
+              <Input
+                id="country"
+                value={discoveryCountry}
+                onChange={(e) => setDiscoveryCountry(e.target.value)}
+                placeholder="Enter country name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="keywords">Keywords</Label>
+              <Input
+                id="keywords"
+                value={discoveryKeywords}
+                onChange={(e) => setDiscoveryKeywords(e.target.value)}
+                placeholder="Enter search keywords"
+              />
+            </div>
+            <Button onClick={handleAutomatedDiscovery} className="w-full">
+              Start Discovery
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
