@@ -26,8 +26,8 @@ export const DataCollectionTab = () => {
   const [discoveryCountry, setDiscoveryCountry] = useState('');
   const [discoveryKeywords, setDiscoveryKeywords] = useState('');
   const [filters, setFilters] = useState<AdvancedFilters>({});
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [copiedAssignee, setCopiedAssignee] = useState('');
+  const [editableSources, setEditableSources] = useState<Record<string, any>>({});
 
   const { data: sources = [], isLoading, refetch } = useDataSourcesWithPoints();
   const deleteSource = useDeleteDataSource();
@@ -89,20 +89,21 @@ export const DataCollectionTab = () => {
         toast.success('Assignee copied to clipboard');
       }
     }
-    if (e.ctrlKey && e.key === 'v' && copiedAssignee && selectedRows.has(sourceId)) {
-      // In a real app, this would update the database
-      toast.success(`Pasted "${copiedAssignee}" to selected rows`);
-    }
   };
 
-  const handleRowSelect = (sourceId: string, isSelected: boolean) => {
-    const newSelected = new Set(selectedRows);
-    if (isSelected) {
-      newSelected.add(sourceId);
-    } else {
-      newSelected.delete(sourceId);
-    }
-    setSelectedRows(newSelected);
+  const handleFieldChange = (sourceId: string, field: string, value: any) => {
+    setEditableSources(prev => ({
+      ...prev,
+      [sourceId]: {
+        ...prev[sourceId],
+        [field]: value
+      }
+    }));
+    toast.success(`Updated ${field}`);
+  };
+
+  const getFieldValue = (source: any, field: string) => {
+    return editableSources[source.id]?.[field] ?? source[field];
   };
 
   const getStatusIcon = (source: any) => {
@@ -228,7 +229,6 @@ export const DataCollectionTab = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Select</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Source Name</TableHead>
                 <TableHead>Country</TableHead>
@@ -244,21 +244,27 @@ export const DataCollectionTab = () => {
               {filteredSources.map((source: any) => (
                 <TableRow key={source.id}>
                   <TableCell>
-                    <Checkbox
-                      checked={selectedRows.has(source.id)}
-                      onCheckedChange={(checked) => handleRowSelect(source.id, checked as boolean)}
-                    />
-                  </TableCell>
-                  <TableCell>
                     <div className="flex items-center gap-2">
                       {getStatusIcon(source)}
-                      {getStatusBadge(source)}
+                      <Select 
+                        value={getFieldValue(source, 'status')} 
+                        onValueChange={(value) => handleFieldChange(source.id, 'status', value)}
+                      >
+                        <SelectTrigger className="border-none">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="Inactive">Inactive</SelectItem>
+                          <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
                     <Input
-                      value={source.source_name}
-                      onChange={() => {}}
+                      value={getFieldValue(source, 'source_name')}
+                      onChange={(e) => handleFieldChange(source.id, 'source_name', e.target.value)}
                       className="border-none p-0 h-auto"
                     />
                     {source.auto_populated && (
@@ -267,13 +273,16 @@ export const DataCollectionTab = () => {
                   </TableCell>
                   <TableCell>
                     <Input
-                      value={source.country}
-                      onChange={() => {}}
+                      value={getFieldValue(source, 'country')}
+                      onChange={(e) => handleFieldChange(source.id, 'country', e.target.value)}
                       className="border-none p-0 h-auto"
                     />
                   </TableCell>
                   <TableCell>
-                    <Select value={source.source_type} onValueChange={() => {}}>
+                    <Select 
+                      value={getFieldValue(source, 'source_type')} 
+                      onValueChange={(value) => handleFieldChange(source.id, 'source_type', value)}
+                    >
                       <SelectTrigger className="border-none">
                         <SelectValue />
                       </SelectTrigger>
@@ -287,7 +296,10 @@ export const DataCollectionTab = () => {
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <Select value={source.source_grade || ''} onValueChange={() => {}}>
+                    <Select 
+                      value={getFieldValue(source, 'source_grade') || ''} 
+                      onValueChange={(value) => handleFieldChange(source.id, 'source_grade', value)}
+                    >
                       <SelectTrigger className="border-none">
                         <SelectValue placeholder="Select grade" />
                       </SelectTrigger>
@@ -301,8 +313,8 @@ export const DataCollectionTab = () => {
                   </TableCell>
                   <TableCell>
                     <Checkbox
-                      checked={source.adip_source}
-                      onCheckedChange={() => {}}
+                      checked={getFieldValue(source, 'adip_source')}
+                      onCheckedChange={(checked) => handleFieldChange(source.id, 'adip_source', checked)}
                     />
                   </TableCell>
                   <TableCell
@@ -310,7 +322,10 @@ export const DataCollectionTab = () => {
                     tabIndex={0}
                     className="focus:outline-none"
                   >
-                    <Select value={source.assigned_to || ''} onValueChange={() => {}}>
+                    <Select 
+                      value={getFieldValue(source, 'assigned_to') || ''} 
+                      onValueChange={(value) => handleFieldChange(source.id, 'assigned_to', value)}
+                    >
                       <SelectTrigger className="border-none">
                         <SelectValue placeholder="Assign to..." />
                       </SelectTrigger>
@@ -321,7 +336,10 @@ export const DataCollectionTab = () => {
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <Select value={source.progress_status || 'not started'} onValueChange={() => {}}>
+                    <Select 
+                      value={getFieldValue(source, 'progress_status') || 'not started'} 
+                      onValueChange={(value) => handleFieldChange(source.id, 'progress_status', value)}
+                    >
                       <SelectTrigger className="border-none">
                         <SelectValue />
                       </SelectTrigger>

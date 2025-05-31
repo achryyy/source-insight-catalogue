@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Search, Download, FileText, Globe, CheckCircle, ExternalLink, RefreshCw, Activity } from 'lucide-react';
@@ -21,6 +21,7 @@ interface AdipDataset {
   format: string;
   size: string;
   url: string;
+  updated?: boolean;
 }
 
 const mockAdipData: AdipDataset[] = [
@@ -149,11 +150,10 @@ const mockAdipData: AdipDataset[] = [
 export const AdipDataSetTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
-  const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
-  const [discoveryCountry, setDiscoveryCountry] = useState('');
-  const [discoveryKeywords, setDiscoveryKeywords] = useState('');
+  const [crawlingProgress, setCrawlingProgress] = useState<Record<string, number>>({});
+  const [datasets, setDatasets] = useState(mockAdipData);
   
-  const filteredData = mockAdipData.filter(dataset =>
+  const filteredData = datasets.filter(dataset =>
     dataset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     dataset.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
     dataset.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -172,8 +172,21 @@ export const AdipDataSetTab = () => {
     }
   };
 
-  const handleCrawl = (dataset: AdipDataset) => {
-    toast.success(`Crawling started for ${dataset.name}`);
+  const handleCrawl = async (dataset: AdipDataset) => {
+    setCrawlingProgress(prev => ({ ...prev, [dataset.id]: 0 }));
+    
+    // Simulate progress
+    for (let i = 0; i <= 100; i += 10) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      setCrawlingProgress(prev => ({ ...prev, [dataset.id]: i }));
+    }
+    
+    setCrawlingProgress(prev => {
+      const { [dataset.id]: _, ...rest } = prev;
+      return rest;
+    });
+    
+    toast.success(`Crawling completed for ${dataset.name}`);
   };
 
   const handleDownload = (dataset: AdipDataset) => {
@@ -184,31 +197,22 @@ export const AdipDataSetTab = () => {
     setIsCheckingUpdates(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Randomly assign updated status to datasets
+      const updatedDatasets = datasets.map(dataset => ({
+        ...dataset,
+        updated: Math.random() > 0.5
+      }));
+      
+      setDatasets(updatedDatasets);
       toast.success('Update check completed for all datasets');
     } finally {
       setIsCheckingUpdates(false);
     }
   };
 
-  const handleAutomatedDiscovery = async () => {
-    if (!discoveryCountry || !discoveryKeywords) {
-      toast.error('Please enter both country and keywords');
-      return;
-    }
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      toast.success(`Automated discovery completed for ${discoveryCountry}. Found 3 new potential sources.`);
-      setIsDiscoveryOpen(false);
-      setDiscoveryCountry('');
-      setDiscoveryKeywords('');
-    } catch (error) {
-      toast.error('Discovery failed. Please try again.');
-    }
-  };
-
-  const totalRecords = mockAdipData.reduce((sum, dataset) => sum + dataset.records, 0);
-  const activeDatasets = mockAdipData.filter(d => d.status === 'Active').length;
+  const totalRecords = datasets.reduce((sum, dataset) => sum + dataset.records, 0);
+  const activeDatasets = datasets.filter(d => d.status === 'Active').length;
 
   return (
     <div className="space-y-8">
@@ -228,42 +232,6 @@ export const AdipDataSetTab = () => {
             )}
             Check Updates
           </Button>
-          <Dialog open={isDiscoveryOpen} onOpenChange={setIsDiscoveryOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Activity className="h-4 w-4 mr-2" />
-                Automated Discovery
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Automated Source Discovery</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={discoveryCountry}
-                    onChange={(e) => setDiscoveryCountry(e.target.value)}
-                    placeholder="Enter country name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="keywords">Keywords</Label>
-                  <Input
-                    id="keywords"
-                    value={discoveryKeywords}
-                    onChange={(e) => setDiscoveryKeywords(e.target.value)}
-                    placeholder="Enter search keywords"
-                  />
-                </div>
-                <Button onClick={handleAutomatedDiscovery} className="w-full">
-                  Start Discovery
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
           <Button>
             <Download className="h-4 w-4 mr-2" />
             Export All
@@ -278,7 +246,7 @@ export const AdipDataSetTab = () => {
             <CardTitle className="text-sm font-medium">Total Datasets</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockAdipData.length}</div>
+            <div className="text-2xl font-bold">{datasets.length}</div>
           </CardContent>
         </Card>
         
@@ -335,6 +303,7 @@ export const AdipDataSetTab = () => {
                 <TableHead>Category</TableHead>
                 <TableHead>Records</TableHead>
                 <TableHead>Last Updated</TableHead>
+                <TableHead>Updated</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Format</TableHead>
                 <TableHead>Size</TableHead>
@@ -359,6 +328,17 @@ export const AdipDataSetTab = () => {
                   <TableCell>{dataset.category}</TableCell>
                   <TableCell>{dataset.records.toLocaleString()}</TableCell>
                   <TableCell>{new Date(dataset.lastUpdated).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {dataset.updated !== undefined ? (
+                      dataset.updated ? (
+                        <Badge variant="default" className="bg-green-600">Yes</Badge>
+                      ) : (
+                        <Badge variant="destructive">No</Badge>
+                      )
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </TableCell>
                   <TableCell>{getStatusBadge(dataset.status)}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{dataset.format}</Badge>
@@ -366,14 +346,20 @@ export const AdipDataSetTab = () => {
                   <TableCell>{dataset.size}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleCrawl(dataset)}
-                      >
-                        <Activity className="h-4 w-4" />
-                        Crawl
-                      </Button>
+                      {crawlingProgress[dataset.id] !== undefined ? (
+                        <div className="w-20">
+                          <Progress value={crawlingProgress[dataset.id]} className="h-8" />
+                        </div>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleCrawl(dataset)}
+                        >
+                          <Activity className="h-4 w-4" />
+                          Crawl
+                        </Button>
+                      )}
                       <Button 
                         variant="outline" 
                         size="sm"
