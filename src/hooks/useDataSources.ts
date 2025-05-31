@@ -26,13 +26,13 @@ export const useDataSources = (filters?: AdvancedFilters) => {
         query = query.eq('crawled', filters.crawled);
       }
       if (filters?.status?.length) {
-        query = query.in('status', filters.status);
+        query = query.in('status', filters.status as any);
       }
       if (filters?.source_type?.length) {
-        query = query.in('source_type', filters.source_type);
+        query = query.in('source_type', filters.source_type as any);
       }
       if (filters?.compliance_status?.length) {
-        query = query.in('compliance_status', filters.compliance_status);
+        query = query.in('compliance_status', filters.compliance_status as any);
       }
 
       query = query.order('created_at', { ascending: false });

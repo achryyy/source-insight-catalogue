@@ -136,9 +136,9 @@ export const DataPointsEditor = ({ dataPoints, onDataPointsChange }: DataPointsE
                 <div key={point.key} className="flex items-center space-x-2">
                   <Checkbox
                     id={point.key}
-                    checked={selectedPoints[point.key] || false}
+                    checked={Boolean(selectedPoints[point.key])}
                     onCheckedChange={(checked) => 
-                      handleDataPointChange(point.key, checked as boolean)
+                      handleDataPointChange(point.key, Boolean(checked))
                     }
                   />
                   <Label 
