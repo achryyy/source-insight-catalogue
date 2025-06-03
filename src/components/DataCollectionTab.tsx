@@ -82,9 +82,10 @@ export const DataCollectionTab = () => {
   const handleKeyDown = (e: React.KeyboardEvent, sourceId: string) => {
     if (e.ctrlKey && e.key === 'c') {
       const source = sources.find((s: any) => s.id === sourceId);
-      if (source?.assigned_to) {
-        setCopiedAssignee(source.assigned_to);
-        navigator.clipboard.writeText(source.assigned_to);
+      const assignedTo = source?.assigned_to || getFieldValue(source, 'assigned_to');
+      if (assignedTo) {
+        setCopiedAssignee(assignedTo);
+        navigator.clipboard.writeText(assignedTo);
         toast.success('Assignee copied to clipboard');
       }
     }
@@ -102,7 +103,7 @@ export const DataCollectionTab = () => {
   };
 
   const getFieldValue = (source: any, field: string) => {
-    return editableSources[source.id]?.[field] ?? source[field];
+    return editableSources[source.id]?.[field] ?? source[field] ?? '';
   };
 
   const getProgressStatusBadge = (status: string) => {
@@ -199,7 +200,7 @@ export const DataCollectionTab = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-purple-600">
-              {sources.filter((s: any) => s.assigned_to).length}
+              {sources.filter((s: any) => getFieldValue(s, 'assigned_to')).length}
             </div>
           </CardContent>
         </Card>
