@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ interface AdipDataset {
   category: string;
   records: number;
   lastUpdated: string;
+  lastCrawled: string;
   status: 'Active' | 'Inactive' | 'Under Maintenance';
   format: string;
   size: string;
@@ -24,14 +26,32 @@ interface AdipDataset {
   updated?: boolean;
 }
 
+// Generate random dates within the last 30 days
+const generateRandomDate = () => {
+  const now = new Date();
+  const pastDate = new Date(now.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000);
+  return pastDate.toISOString().split('T')[0];
+};
+
+// Generate random records based on last crawled date
+const generateRecordsFromDate = (lastCrawled: string) => {
+  const date = new Date(lastCrawled);
+  const daysSinceCrawled = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+  const baseRecords = 10000 + Math.floor(Math.random() * 100000);
+  // More recent crawls might have more records
+  const crawlMultiplier = Math.max(0.5, 1 - (daysSinceCrawled / 100));
+  return Math.floor(baseRecords * crawlMultiplier);
+};
+
 const mockAdipData: AdipDataset[] = [
   {
     id: '1',
     name: 'UAE Commercial Registry',
     country: 'United Arab Emirates',
     category: 'Business Registration',
-    records: 125430,
+    records: 0, // Will be calculated
     lastUpdated: '2025-05-30',
+    lastCrawled: generateRandomDate(),
     status: 'Active',
     format: 'JSON',
     size: '2.3 GB',
@@ -42,8 +62,9 @@ const mockAdipData: AdipDataset[] = [
     name: 'Saudi Arabia Corporate Database',
     country: 'Saudi Arabia',
     category: 'Corporate Information',
-    records: 89765,
+    records: 0,
     lastUpdated: '2025-05-29',
+    lastCrawled: generateRandomDate(),
     status: 'Active',
     format: 'XML',
     size: '1.8 GB',
@@ -54,8 +75,9 @@ const mockAdipData: AdipDataset[] = [
     name: 'Egypt Business Directory',
     country: 'Egypt',
     category: 'Business Registration',
-    records: 67234,
+    records: 0,
     lastUpdated: '2025-05-28',
+    lastCrawled: generateRandomDate(),
     status: 'Under Maintenance',
     format: 'CSV',
     size: '945 MB',
@@ -66,8 +88,9 @@ const mockAdipData: AdipDataset[] = [
     name: 'Qatar Commercial Registry',
     country: 'Qatar',
     category: 'Business Registration',
-    records: 34567,
+    records: 0,
     lastUpdated: '2025-05-27',
+    lastCrawled: generateRandomDate(),
     status: 'Active',
     format: 'JSON',
     size: '567 MB',
@@ -78,8 +101,9 @@ const mockAdipData: AdipDataset[] = [
     name: 'Kuwait Corporate Database',
     country: 'Kuwait',
     category: 'Corporate Information',
-    records: 45123,
+    records: 0,
     lastUpdated: '2025-05-26',
+    lastCrawled: generateRandomDate(),
     status: 'Inactive',
     format: 'XML',
     size: '678 MB',
@@ -90,8 +114,9 @@ const mockAdipData: AdipDataset[] = [
     name: 'Bahrain Business Registry',
     country: 'Bahrain',
     category: 'Business Registration',
-    records: 23456,
+    records: 0,
     lastUpdated: '2025-05-25',
+    lastCrawled: generateRandomDate(),
     status: 'Active',
     format: 'JSON',
     size: '345 MB',
@@ -102,8 +127,9 @@ const mockAdipData: AdipDataset[] = [
     name: 'Oman Trade Registry',
     country: 'Oman',
     category: 'Trade Information',
-    records: 56789,
+    records: 0,
     lastUpdated: '2025-05-24',
+    lastCrawled: generateRandomDate(),
     status: 'Active',
     format: 'XML',
     size: '890 MB',
@@ -114,8 +140,9 @@ const mockAdipData: AdipDataset[] = [
     name: 'Jordan Business Registry',
     country: 'Jordan',
     category: 'Business Registration',
-    records: 34521,
+    records: 0,
     lastUpdated: '2025-05-23',
+    lastCrawled: generateRandomDate(),
     status: 'Under Maintenance',
     format: 'JSON',
     size: '456 MB',
@@ -126,8 +153,9 @@ const mockAdipData: AdipDataset[] = [
     name: 'Morocco Commercial Database',
     country: 'Morocco',
     category: 'Commercial Information',
-    records: 78912,
+    records: 0,
     lastUpdated: '2025-05-22',
+    lastCrawled: generateRandomDate(),
     status: 'Active',
     format: 'CSV',
     size: '1.2 GB',
@@ -138,14 +166,18 @@ const mockAdipData: AdipDataset[] = [
     name: 'Tunisia Business Directory',
     country: 'Tunisia',
     category: 'Business Registration',
-    records: 43567,
+    records: 0,
     lastUpdated: '2025-05-21',
+    lastCrawled: generateRandomDate(),
     status: 'Inactive',
     format: 'XML',
     size: '654 MB',
     url: 'https://tunisia-business.gov.tn'
   }
-];
+].map(dataset => ({
+  ...dataset,
+  records: generateRecordsFromDate(dataset.lastCrawled)
+}));
 
 export const AdipDataSetTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -181,12 +213,21 @@ export const AdipDataSetTab = () => {
       setCrawlingProgress(prev => ({ ...prev, [dataset.id]: i }));
     }
     
+    // Update last crawled date and recalculate records
+    const updatedDataset = {
+      ...dataset,
+      lastCrawled: new Date().toISOString().split('T')[0],
+      records: generateRecordsFromDate(new Date().toISOString().split('T')[0])
+    };
+    
+    setDatasets(prev => prev.map(d => d.id === dataset.id ? updatedDataset : d));
+    
     setCrawlingProgress(prev => {
       const { [dataset.id]: _, ...rest } = prev;
       return rest;
     });
     
-    toast.success(`Crawling completed for ${dataset.name}`);
+    toast.success(`Crawling completed for ${dataset.name}. Records updated: ${updatedDataset.records.toLocaleString()}`);
   };
 
   const handleDownload = (dataset: AdipDataset) => {
@@ -303,6 +344,7 @@ export const AdipDataSetTab = () => {
                 <TableHead>Category</TableHead>
                 <TableHead>Records</TableHead>
                 <TableHead>Last Updated</TableHead>
+                <TableHead>Last Crawled</TableHead>
                 <TableHead>Updated</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Format</TableHead>
@@ -328,6 +370,7 @@ export const AdipDataSetTab = () => {
                   <TableCell>{dataset.category}</TableCell>
                   <TableCell>{dataset.records.toLocaleString()}</TableCell>
                   <TableCell>{new Date(dataset.lastUpdated).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(dataset.lastCrawled).toLocaleDateString()}</TableCell>
                   <TableCell>
                     {dataset.updated !== undefined ? (
                       dataset.updated ? (

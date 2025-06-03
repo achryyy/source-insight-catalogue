@@ -1,16 +1,19 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, TrendingDown, Users, Database, FileText, Clock } from 'lucide-react';
 
-const sourcesByCountry = [
-  { name: 'UAE', value: 45, color: '#0088FE' },
-  { name: 'Saudi Arabia', value: 38, color: '#00C49F' },
-  { name: 'Egypt', value: 32, color: '#FFBB28' },
-  { name: 'Qatar', value: 25, color: '#FF8042' },
-  { name: 'Kuwait', value: 18, color: '#8884D8' },
-  { name: 'Other', value: 22, color: '#82CA9D' }
+const sourceTypeDistribution = [
+  { name: 'Governmental', value: 45, color: '#0088FE' },
+  { name: 'Stock Exchange', value: 28, color: '#00C49F' },
+  { name: 'Chamber', value: 32, color: '#FFBB28' },
+  { name: 'Ministry', value: 25, color: '#FF8042' },
+  { name: 'Non-governmental', value: 18, color: '#8884D8' },
+  { name: 'Tax Authority', value: 22, color: '#82CA9D' }
 ];
 
 const monthlyProgress = [
@@ -29,6 +32,20 @@ const orderStatusData = [
 ];
 
 export const AnalyticsDashboard = () => {
+  const [showSources, setShowSources] = useState(true);
+  const [showOrders, setShowOrders] = useState(true);
+  const [showApproved, setShowApproved] = useState(true);
+
+  const getFilteredProgressData = () => {
+    return monthlyProgress.map(month => {
+      const filtered: any = { month: month.month };
+      if (showSources) filtered.sources = month.sources;
+      if (showOrders) filtered.orders = month.orders;
+      if (showApproved) filtered.approved = month.approved;
+      return filtered;
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -104,17 +121,43 @@ export const AnalyticsDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Monthly Progress</CardTitle>
+            <div className="flex gap-4 mt-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="sources"
+                  checked={showSources}
+                  onCheckedChange={(checked) => setShowSources(checked as boolean)}
+                />
+                <Label htmlFor="sources">Sources</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="orders"
+                  checked={showOrders}
+                  onCheckedChange={(checked) => setShowOrders(checked as boolean)}
+                />
+                <Label htmlFor="orders">Orders</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="approved"
+                  checked={showApproved}
+                  onCheckedChange={(checked) => setShowApproved(checked as boolean)}
+                />
+                <Label htmlFor="approved">Approved</Label>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyProgress}>
+              <LineChart data={getFilteredProgressData()}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="sources" stroke="#3B82F6" strokeWidth={2} />
-                <Line type="monotone" dataKey="orders" stroke="#10B981" strokeWidth={2} />
-                <Line type="monotone" dataKey="approved" stroke="#F59E0B" strokeWidth={2} />
+                {showSources && <Line type="monotone" dataKey="sources" stroke="#3B82F6" strokeWidth={2} />}
+                {showOrders && <Line type="monotone" dataKey="orders" stroke="#10B981" strokeWidth={2} />}
+                {showApproved && <Line type="monotone" dataKey="approved" stroke="#F59E0B" strokeWidth={2} />}
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -122,13 +165,13 @@ export const AnalyticsDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Sources by Country</CardTitle>
+            <CardTitle>Source Type Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={sourcesByCountry}
+                  data={sourceTypeDistribution}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -137,7 +180,7 @@ export const AnalyticsDashboard = () => {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {sourcesByCountry.map((entry, index) => (
+                  {sourceTypeDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>

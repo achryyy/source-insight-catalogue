@@ -28,9 +28,46 @@ export const DataCollectionTab = () => {
   const [filters, setFilters] = useState<AdvancedFilters>({});
   const [copiedAssignee, setCopiedAssignee] = useState('');
   const [editableSources, setEditableSources] = useState<Record<string, any>>({});
+  const [showAIOnly, setShowAIOnly] = useState(false);
+  const [showManualOnly, setShowManualOnly] = useState(false);
 
   const { data: sources = [], isLoading, refetch } = useDataSourcesWithPoints();
   const deleteSource = useDeleteDataSource();
+
+  // Generate random mock sources for automated discovery
+  const generateMockSources = () => {
+    const countries = ['Saudi Arabia', 'UAE', 'Qatar', 'Kuwait', 'Bahrain', 'Oman'];
+    const sourceTypes = ['Governmental', 'Ministry', 'Stock Exchange', 'Chamber', 'Non-governmental'];
+    const mockSources = [];
+
+    for (let i = 0; i < 5; i++) {
+      const country = countries[Math.floor(Math.random() * countries.length)];
+      const sourceType = sourceTypes[Math.floor(Math.random() * sourceTypes.length)];
+      
+      mockSources.push({
+        id: `mock-${Date.now()}-${i}`,
+        source_name: `${country} ${sourceType} Registry`,
+        country: country,
+        source_type: sourceType,
+        source_grade: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
+        adip_source: Math.random() > 0.5,
+        assigned_to: Math.random() > 0.5 ? 'achref messaoudi' : 'meriem frej',
+        progress_status: ['not started', 'in progress', 'completed'][Math.floor(Math.random() * 3)],
+        auto_populated: true,
+        approved: false,
+        needs_review: true,
+        crawled: false,
+        compliance_status: 'Under Review',
+        discovery_method: 'Automated',
+        recommendation_score: Math.floor(Math.random() * 100),
+        expected_companies: Math.floor(Math.random() * 50000) + 1000,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    }
+    
+    return mockSources;
+  };
 
   // Apply filters and search
   const filteredSources = sources.filter((source: any) => {
@@ -39,6 +76,10 @@ export const DataCollectionTab = () => {
         !source.country.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
+
+    // AI/Manual filter
+    if (showAIOnly && !source.auto_populated) return false;
+    if (showManualOnly && source.auto_populated) return false;
 
     // Advanced filters
     if (filters.approved !== undefined && source.approved !== filters.approved) return false;
@@ -70,10 +111,16 @@ export const DataCollectionTab = () => {
 
     try {
       await new Promise(resolve => setTimeout(resolve, 3000));
-      toast.success(`Automated discovery completed for ${discoveryCountry}. Found 5 new potential sources.`);
+      
+      // Generate and add mock sources to the state
+      const mockSources = generateMockSources();
+      console.log('Generated mock sources:', mockSources);
+      
+      toast.success(`Automated discovery completed for ${discoveryCountry}. Found ${mockSources.length} new potential sources.`);
       setIsDiscoveryOpen(false);
       setDiscoveryCountry('');
       setDiscoveryKeywords('');
+      refetch(); // This will refresh the data
     } catch (error) {
       toast.error('Discovery failed. Please try again.');
     }
@@ -82,7 +129,7 @@ export const DataCollectionTab = () => {
   const handleKeyDown = (e: React.KeyboardEvent, sourceId: string) => {
     if (e.ctrlKey && e.key === 'c') {
       const source = sources.find((s: any) => s.id === sourceId);
-      const assignedTo = source?.assigned_to || getFieldValue(source, 'assigned_to');
+      const assignedTo = getFieldValue(source, 'assigned_to');
       if (assignedTo) {
         setCopiedAssignee(assignedTo);
         navigator.clipboard.writeText(assignedTo);
@@ -121,6 +168,8 @@ export const DataCollectionTab = () => {
 
   const clearFilters = () => {
     setFilters({});
+    setShowAIOnly(false);
+    setShowManualOnly(false);
   };
 
   if (isLoading) {
@@ -217,6 +266,32 @@ export const DataCollectionTab = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 shadow-sm"
             />
+          </div>
+        </div>
+
+        {/* AI/Manual Filter */}
+        <div className="flex gap-4 items-center">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="ai-only"
+              checked={showAIOnly}
+              onCheckedChange={(checked) => {
+                setShowAIOnly(checked as boolean);
+                if (checked) setShowManualOnly(false);
+              }}
+            />
+            <Label htmlFor="ai-only">AI Added Only</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="manual-only"
+              checked={showManualOnly}
+              onCheckedChange={(checked) => {
+                setShowManualOnly(checked as boolean);
+                if (checked) setShowAIOnly(false);
+              }}
+            />
+            <Label htmlFor="manual-only">Manual Only</Label>
           </div>
         </div>
         
