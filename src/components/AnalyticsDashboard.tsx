@@ -51,12 +51,12 @@ const statusTrendData = [
 ];
 
 const aiUsageData = [
-  { source: 'UAE Commercial Registry', usageCount: 156 },
-  { source: 'Saudi GAZT', usageCount: 134 },
-  { source: 'Qatar Chamber', usageCount: 89 },
-  { source: 'Kuwait Stock Exchange', usageCount: 67 },
+  { source: 'AL Madina', usageCount: 156 },
+  { source: 'GCC News', usageCount: 134 },
+  { source: 'KSA News', usageCount: 89 },
+  { source: 'Oman Chamber of Commerce', usageCount: 67 },
   { source: 'Bahrain Ministry', usageCount: 45 },
-  { source: 'Oman Tax Authority', usageCount: 34 }
+  { source: 'UAE Commercial Registry', usageCount: 34 }
 ];
 
 export const AnalyticsDashboard = () => {
@@ -263,7 +263,7 @@ export const AnalyticsDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>AI Sources Usage in Orders</CardTitle>
+            <CardTitle>AI Sources Usage in Deep Research Orders</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>

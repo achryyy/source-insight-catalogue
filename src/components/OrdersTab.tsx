@@ -442,7 +442,7 @@ export const OrdersTab = () => {
                           className="shadow-sm"
                         >
                           <Bot className="h-4 w-4 mr-1" />
-                          Start AI
+                          Deepresearch AI
                         </Button>
                       ) : (
                         <Button 
