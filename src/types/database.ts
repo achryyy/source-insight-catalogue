@@ -8,7 +8,6 @@ export interface DataSource {
   source_grade?: string;
   expected_companies?: number;
   recommendation_score: number;
-  status: 'Active' | 'Inactive' | 'Under Maintenance';
   adip_source: boolean;
   adip_refresh_frequency?: string;
   compliance_status: 'Compliant' | 'Under Review' | 'Non-Compliant';
