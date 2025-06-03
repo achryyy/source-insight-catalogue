@@ -31,6 +31,34 @@ const orderStatusData = [
   { name: 'Not Started', value: 12, color: '#6B7280' }
 ];
 
+const countryPerformanceData = [
+  { country: 'UAE', totalSources: 45, activeSources: 38 },
+  { country: 'Saudi Arabia', totalSources: 32, activeSources: 28 },
+  { country: 'Qatar', totalSources: 28, activeSources: 24 },
+  { country: 'Kuwait', totalSources: 22, activeSources: 19 },
+  { country: 'Bahrain', totalSources: 18, activeSources: 15 },
+  { country: 'Oman', totalSources: 15, activeSources: 12 },
+  { country: 'Egypt', totalSources: 25, activeSources: 20 },
+  { country: 'Jordan', totalSources: 12, activeSources: 10 }
+];
+
+const statusTrendData = [
+  { month: 'Jan', active: 120, inactive: 15, maintenance: 8 },
+  { month: 'Feb', active: 135, inactive: 18, maintenance: 12 },
+  { month: 'Mar', active: 158, inactive: 22, maintenance: 15 },
+  { month: 'Apr', active: 175, inactive: 25, maintenance: 18 },
+  { month: 'May', active: 197, inactive: 28, maintenance: 22 }
+];
+
+const aiUsageData = [
+  { source: 'UAE Commercial Registry', usageCount: 156 },
+  { source: 'Saudi GAZT', usageCount: 134 },
+  { source: 'Qatar Chamber', usageCount: 89 },
+  { source: 'Kuwait Stock Exchange', usageCount: 67 },
+  { source: 'Bahrain Ministry', usageCount: 45 },
+  { source: 'Oman Tax Authority', usageCount: 34 }
+];
+
 export const AnalyticsDashboard = () => {
   const [showSources, setShowSources] = useState(true);
   const [showOrders, setShowOrders] = useState(true);
@@ -195,16 +223,56 @@ export const AnalyticsDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Order Status Distribution</CardTitle>
+            <CardTitle>Country Performance</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={orderStatusData}>
+              <BarChart data={countryPerformanceData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="country" angle={-45} textAnchor="end" height={80} />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="value" fill="#3B82F6" />
+                <Bar dataKey="totalSources" fill="#3B82F6" name="Total Sources" />
+                <Bar dataKey="activeSources" fill="#10B981" name="Active Sources" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Status Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={statusTrendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="active" stroke="#10B981" strokeWidth={2} name="Active" />
+                <Line type="monotone" dataKey="inactive" stroke="#EF4444" strokeWidth={2} name="Inactive" />
+                <Line type="monotone" dataKey="maintenance" stroke="#F59E0B" strokeWidth={2} name="Under Maintenance" />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row 3 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>AI Sources Usage in Orders</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={aiUsageData} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="source" type="category" width={120} />
+                <Tooltip />
+                <Bar dataKey="usageCount" fill="#8B5CF6" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -253,29 +321,6 @@ export const AnalyticsDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Performance Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Performance Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">98.5%</div>
-              <div className="text-sm text-muted-foreground">System Uptime</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">1.2s</div>
-              <div className="text-sm text-muted-foreground">Avg Response Time</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">99.2%</div>
-              <div className="text-sm text-muted-foreground">Data Accuracy</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
