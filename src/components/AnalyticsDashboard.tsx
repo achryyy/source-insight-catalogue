@@ -263,14 +263,14 @@ export const AnalyticsDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>AI Sources Usage in Deep Research Orders</CardTitle>
+            <CardTitle>Most Used Sources in Deep Research</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={aiUsageData} layout="horizontal">
+              <BarChart data={aiUsageData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="source" type="category" width={120} />
+                <XAxis dataKey="source" angle={-45} textAnchor="end" height={100} />
+                <YAxis />
                 <Tooltip />
                 <Bar dataKey="usageCount" fill="#8B5CF6" />
               </BarChart>
