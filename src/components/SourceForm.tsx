@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +32,6 @@ export const SourceForm = ({ source, onSuccess }: SourceFormProps) => {
     update_frequency: source?.update_frequency || '',
     data_extraction_format: source?.data_extraction_format || 'HTML',
     compliance_status: source?.compliance_status || 'Under Review',
-    status: source?.status || 'Active',
     recommendation_score: source?.recommendation_score || 0,
     source_grade: source?.source_grade || '',
   });
@@ -78,7 +76,6 @@ export const SourceForm = ({ source, onSuccess }: SourceFormProps) => {
       search_input_required: formData.search_input_required ?? false,
       captcha_requirements: formData.captcha_requirements ?? false,
       compliance_status: formData.compliance_status || 'Under Review',
-      status: formData.status || 'Active',
       recommendation_score: formData.recommendation_score || 0,
     } as Omit<DataSource, 'id' | 'created_at' | 'updated_at'>;
     
