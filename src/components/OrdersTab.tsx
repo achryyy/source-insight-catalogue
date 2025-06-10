@@ -175,13 +175,13 @@ export const OrdersTab = () => {
         return false;
       }
 
-      // Column filters
-      if (filters.assignedTo && (!order.assignedTo || !order.assignedTo.toLowerCase().includes(filters.assignedTo.toLowerCase()))) return false;
-      if (filters.status && order.status !== filters.status) return false;
-      if (filters.country && !order.country.toLowerCase().includes(filters.country.toLowerCase())) return false;
-      if (filters.order && !order.order.toLowerCase().includes(filters.order.toLowerCase())) return false;
-      if (filters.uid && !order.uid.toLowerCase().includes(filters.uid.toLowerCase())) return false;
-      if (filters.client && !order.client.toLowerCase().includes(filters.client.toLowerCase())) return false;
+      // Column filters - using 'all' instead of empty string
+      if (filters.assignedTo && filters.assignedTo !== 'all' && (!order.assignedTo || !order.assignedTo.toLowerCase().includes(filters.assignedTo.toLowerCase()))) return false;
+      if (filters.status && filters.status !== 'all' && order.status !== filters.status) return false;
+      if (filters.country && filters.country !== 'all' && !order.country.toLowerCase().includes(filters.country.toLowerCase())) return false;
+      if (filters.order && filters.order !== 'all' && !order.order.toLowerCase().includes(filters.order.toLowerCase())) return false;
+      if (filters.uid && filters.uid !== 'all' && !order.uid.toLowerCase().includes(filters.uid.toLowerCase())) return false;
+      if (filters.client && filters.client !== 'all' && !order.client.toLowerCase().includes(filters.client.toLowerCase())) return false;
 
       return true;
     })
@@ -479,7 +479,7 @@ export const OrdersTab = () => {
                   <SelectValue placeholder="Filter by assignee..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="achref messaoudi">Achref Messaoudi</SelectItem>
                   <SelectItem value="meriem frej">Meriem Frej</SelectItem>
                 </SelectContent>
@@ -492,7 +492,7 @@ export const OrdersTab = () => {
                   <SelectValue placeholder="Filter by status..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="Pending">Pending</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
                   <SelectItem value="Completed">Completed</SelectItem>

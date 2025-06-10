@@ -401,13 +401,14 @@ export const DataCollectionTab = () => {
                   </TableCell>
                   <TableCell>
                     <Select 
-                      value={getFieldValue(source, 'source_grade') || ''} 
-                      onValueChange={(value) => handleFieldChange(source.id, 'source_grade', value)}
+                      value={getFieldValue(source, 'source_grade') || 'none'} 
+                      onValueChange={(value) => handleFieldChange(source.id, 'source_grade', value === 'none' ? '' : value)}
                     >
                       <SelectTrigger className="border-none">
                         <SelectValue placeholder="Select grade" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Select grade</SelectItem>
                         <SelectItem value="A">A</SelectItem>
                         <SelectItem value="B">B</SelectItem>
                         <SelectItem value="C">C</SelectItem>
@@ -427,13 +428,14 @@ export const DataCollectionTab = () => {
                     className="focus:outline-none"
                   >
                     <Select 
-                      value={getFieldValue(source, 'assigned_to') || ''} 
-                      onValueChange={(value) => handleFieldChange(source.id, 'assigned_to', value)}
+                      value={getFieldValue(source, 'assigned_to') || 'none'} 
+                      onValueChange={(value) => handleFieldChange(source.id, 'assigned_to', value === 'none' ? '' : value)}
                     >
                       <SelectTrigger className="border-none">
                         <SelectValue placeholder="Assign to..." />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Assign to...</SelectItem>
                         <SelectItem value="achref messaoudi">Achref Messaoudi</SelectItem>
                         <SelectItem value="meriem frej">Meriem Frej</SelectItem>
                       </SelectContent>
