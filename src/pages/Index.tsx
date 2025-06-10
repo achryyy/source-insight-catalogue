@@ -6,13 +6,34 @@ import { AdipDataSetTab } from '@/components/AdipDataSetTab';
 import { OrdersTab } from '@/components/OrdersTab';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { Header } from '@/components/Header';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('data-collection');
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const handleLogin = () => {
+    // This shouldn't be called since we're in a protected route
+    console.log('Login called from authenticated page');
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  const handleSettings = () => {
+    console.log('Settings clicked');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header 
+        isAuthenticated={isAuthenticated}
+        user={user || undefined}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+        onSettings={handleSettings}
+      />
       <div className="container mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Data Sources Management Tool</h1>
