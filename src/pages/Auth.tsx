@@ -66,8 +66,8 @@ const Auth = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
             <Database className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">ADIP Platform</h1>
-          <p className="text-gray-600 mt-2">Automated Data Integration & Processing</p>
+          <h1 className="text-3xl font-bold text-gray-900">Data Sources Management Tool</h1>
+          <p className="text-gray-600 mt-2">Cedar Rose</p>
         </div>
 
         <Card className="shadow-lg">

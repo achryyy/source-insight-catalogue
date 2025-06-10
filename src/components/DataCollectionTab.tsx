@@ -30,6 +30,7 @@ export const DataCollectionTab = () => {
   const [showAIOnly, setShowAIOnly] = useState(false);
   const [showManualOnly, setShowManualOnly] = useState(false);
   const [migratingSourceId, setMigratingSourceId] = useState<string | null>(null);
+  const [migratedSources, setMigratedSources] = useState<Set<string>>(new Set());
 
   const { data: sources = [], isLoading, refetch } = useDataSourcesWithPoints();
   const deleteSource = useDeleteDataSource();
@@ -108,6 +109,9 @@ export const DataCollectionTab = () => {
     
     // Simulate migration process
     await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Add source to migrated sources set
+    setMigratedSources(prev => new Set([...prev, source.id]));
     
     // Enhanced success message with better styling
     const successDiv = document.createElement('div');
@@ -469,20 +473,22 @@ export const DataCollectionTab = () => {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleMigrateToAdip(source)}
-                        disabled={migratingSourceId === source.id}
-                        className="shadow-sm bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
-                      >
-                        {migratingSourceId === source.id ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <ArrowRight className="h-4 w-4" />
-                        )}
-                        <span className="ml-1 text-xs">Migrate to ADIP</span>
-                      </Button>
+                      {!migratedSources.has(source.id) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMigrateToAdip(source)}
+                          disabled={migratingSourceId === source.id}
+                          className="shadow-sm bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
+                        >
+                          {migratingSourceId === source.id ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ArrowRight className="h-4 w-4" />
+                          )}
+                          <span className="ml-1 text-xs">Migrate to ADIP</span>
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
