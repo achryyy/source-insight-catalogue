@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Download, Plus, Bot, FileText, Filter, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, Download, Plus, Bot, FileText, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Order {
@@ -150,12 +151,12 @@ export const OrdersTab = () => {
 
   // Filter states
   const [filters, setFilters] = useState({
-    assignedTo: '',
-    status: '',
-    country: '',
-    order: '',
-    uid: '',
-    client: ''
+    assignedTo: 'all',
+    status: 'all',
+    country: 'all',
+    order: 'all',
+    uid: 'all',
+    client: 'all'
   });
 
   // Sort states
@@ -175,13 +176,13 @@ export const OrdersTab = () => {
         return false;
       }
 
-      // Column filters - using 'all' instead of empty string
-      if (filters.assignedTo && filters.assignedTo !== 'all' && (!order.assignedTo || !order.assignedTo.toLowerCase().includes(filters.assignedTo.toLowerCase()))) return false;
-      if (filters.status && filters.status !== 'all' && order.status !== filters.status) return false;
-      if (filters.country && filters.country !== 'all' && !order.country.toLowerCase().includes(filters.country.toLowerCase())) return false;
-      if (filters.order && filters.order !== 'all' && !order.order.toLowerCase().includes(filters.order.toLowerCase())) return false;
-      if (filters.uid && filters.uid !== 'all' && !order.uid.toLowerCase().includes(filters.uid.toLowerCase())) return false;
-      if (filters.client && filters.client !== 'all' && !order.client.toLowerCase().includes(filters.client.toLowerCase())) return false;
+      // Column filters
+      if (filters.assignedTo !== 'all' && (!order.assignedTo || !order.assignedTo.toLowerCase().includes(filters.assignedTo.toLowerCase()))) return false;
+      if (filters.status !== 'all' && order.status !== filters.status) return false;
+      if (filters.country !== 'all' && !order.country.toLowerCase().includes(filters.country.toLowerCase())) return false;
+      if (filters.order !== 'all' && !order.order.toLowerCase().includes(filters.order.toLowerCase())) return false;
+      if (filters.uid !== 'all' && !order.uid.toLowerCase().includes(filters.uid.toLowerCase())) return false;
+      if (filters.client !== 'all' && !order.client.toLowerCase().includes(filters.client.toLowerCase())) return false;
 
       return true;
     })
@@ -210,12 +211,12 @@ export const OrdersTab = () => {
 
   const clearFilters = () => {
     setFilters({
-      assignedTo: '',
-      status: '',
-      country: '',
-      order: '',
-      uid: '',
-      client: ''
+      assignedTo: 'all',
+      status: 'all',
+      country: 'all',
+      order: 'all',
+      uid: 'all',
+      client: 'all'
     });
     setDateSortField(null);
     setDateSortDirection('asc');
@@ -430,97 +431,23 @@ export const OrdersTab = () => {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-blue-600" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div>
-              <Label>Order</Label>
-              <Input
-                placeholder="Filter by order..."
-                value={filters.order}
-                onChange={(e) => setFilters(prev => ({ ...prev, order: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>UID</Label>
-              <Input
-                placeholder="Filter by UID..."
-                value={filters.uid}
-                onChange={(e) => setFilters(prev => ({ ...prev, uid: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Client</Label>
-              <Input
-                placeholder="Filter by client..."
-                value={filters.client}
-                onChange={(e) => setFilters(prev => ({ ...prev, client: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Country</Label>
-              <Input
-                placeholder="Filter by country..."
-                value={filters.country}
-                onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Assigned To</Label>
-              <Select value={filters.assignedTo} onValueChange={(value) => setFilters(prev => ({ ...prev, assignedTo: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by assignee..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="achref messaoudi">Achref Messaoudi</SelectItem>
-                  <SelectItem value="meriem frej">Meriem Frej</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Status</Label>
-              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by status..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="Not Started">Not Started</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Button onClick={clearFilters} variant="outline" size="sm">
-              Clear Filters
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Search orders..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 shadow-sm"
-        />
+      {/* Search and Clear Filters */}
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search orders..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 shadow-sm"
+          />
+        </div>
+        <Button onClick={clearFilters} variant="outline">
+          Clear All Filters
+        </Button>
       </div>
 
-      {/* Orders Table */}
+      {/* Orders Table with Integrated Filters */}
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -533,11 +460,51 @@ export const OrdersTab = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>No</TableHead>
-                <TableHead>Order</TableHead>
-                <TableHead>UID</TableHead>
-                <TableHead>Client</TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <span>Order</span>
+                    <Input
+                      placeholder="Filter orders..."
+                      value={filters.order === 'all' ? '' : filters.order}
+                      onChange={(e) => setFilters(prev => ({ ...prev, order: e.target.value || 'all' }))}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <span>UID</span>
+                    <Input
+                      placeholder="Filter UIDs..."
+                      value={filters.uid === 'all' ? '' : filters.uid}
+                      onChange={(e) => setFilters(prev => ({ ...prev, uid: e.target.value || 'all' }))}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <span>Client</span>
+                    <Input
+                      placeholder="Filter clients..."
+                      value={filters.client === 'all' ? '' : filters.client}
+                      onChange={(e) => setFilters(prev => ({ ...prev, client: e.target.value || 'all' }))}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </TableHead>
                 <TableHead>Subject</TableHead>
-                <TableHead>Country</TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <span>Country</span>
+                    <Input
+                      placeholder="Filter countries..."
+                      value={filters.country === 'all' ? '' : filters.country}
+                      onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value || 'all' }))}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-gray-100"
                   onClick={() => handleDateSort('dateIn')}
@@ -562,8 +529,44 @@ export const OrdersTab = () => {
                     {dateSortField !== 'clientDueDate' && <ArrowUpDown className="h-4 w-4 opacity-50" />}
                   </div>
                 </TableHead>
-                <TableHead>Assigned To</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <span>Assigned To</span>
+                    <Select 
+                      value={filters.assignedTo} 
+                      onValueChange={(value) => setFilters(prev => ({ ...prev, assignedTo: value }))}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="achref messaoudi">Achref Messaoudi</SelectItem>
+                        <SelectItem value="meriem frej">Meriem Frej</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <span>Status</span>
+                    <Select 
+                      value={filters.status} 
+                      onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectItem value="Not Started">Not Started</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TableHead>
                 <TableHead>Deep Research</TableHead>
               </TableRow>
             </TableHeader>
@@ -580,13 +583,14 @@ export const OrdersTab = () => {
                   <TableCell>{order.clientDueDate}</TableCell>
                   <TableCell>
                     <Select 
-                      value={getFieldValue(order, 'assignedTo') || ''} 
-                      onValueChange={(value) => handleFieldChange(order.order, 'assignedTo', value)}
+                      value={getFieldValue(order, 'assignedTo') || 'none'} 
+                      onValueChange={(value) => handleFieldChange(order.order, 'assignedTo', value === 'none' ? '' : value)}
                     >
                       <SelectTrigger className="border-none">
                         <SelectValue placeholder="Assign to..." />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Assign to...</SelectItem>
                         <SelectItem value="achref messaoudi">Achref Messaoudi</SelectItem>
                         <SelectItem value="meriem frej">Meriem Frej</SelectItem>
                       </SelectContent>
