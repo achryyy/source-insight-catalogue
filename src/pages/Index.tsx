@@ -9,18 +9,12 @@ import { AdipDataSetTab } from '@/components/AdipDataSetTab';
 import { OrdersTab } from '@/components/OrdersTab';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { Header } from '@/components/Header';
-import { AuthModal } from '@/components/AuthModal';
 import { SettingsModal } from '@/components/SettingsModal';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
-const IndexContent = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
+const Index = () => {
+  const { user, logout } = useAuth();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-
-  const handleLogin = () => {
-    setShowAuthModal(true);
-  };
 
   const handleLogout = () => {
     logout();
@@ -33,9 +27,9 @@ const IndexContent = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
-        isAuthenticated={isAuthenticated}
+        isAuthenticated={true}
         user={user || undefined}
-        onLogin={handleLogin}
+        onLogin={() => {}}
         onLogout={handleLogout}
         onSettings={handleSettings}
       />
@@ -115,25 +109,12 @@ const IndexContent = () => {
           </TabsContent>
         </Tabs>
 
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-        />
-
         <SettingsModal
           isOpen={showSettingsModal}
           onClose={() => setShowSettingsModal(false)}
         />
       </div>
     </div>
-  );
-};
-
-const Index = () => {
-  return (
-    <AuthProvider>
-      <IndexContent />
-    </AuthProvider>
   );
 };
 

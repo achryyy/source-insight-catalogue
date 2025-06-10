@@ -23,6 +23,7 @@ interface AdipDataset {
 
 export const AdipDataSetTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
 
   const generateMockData = (): AdipDataset[] => {
     const countries = ['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Egypt', 'Jordan'];
@@ -71,6 +72,20 @@ export const AdipDataSetTab = () => {
     }
   };
 
+  const handleCheckUpdates = async () => {
+    setIsCheckingUpdates(true);
+    
+    // Simulate checking for updates
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Mock some updates found
+    const updatesFound = Math.floor(Math.random() * 5) + 1;
+    console.log(`Found ${updatesFound} sources with updates`);
+    
+    setIsCheckingUpdates(false);
+    alert(`Checked all sources. Found ${updatesFound} sources with new updates.`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -80,24 +95,34 @@ export const AdipDataSetTab = () => {
             Manage and monitor automated data integration pipelines
           </p>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Dataset
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New ADIP Dataset</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Dataset creation form would go here
-              </p>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleCheckUpdates}
+            disabled={isCheckingUpdates}
+            variant="outline"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isCheckingUpdates ? 'animate-spin' : ''}`} />
+            {isCheckingUpdates ? 'Checking Updates...' : 'Check Source Updates'}
+          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Dataset
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New ADIP Dataset</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Dataset creation form would go here
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
