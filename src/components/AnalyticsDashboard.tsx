@@ -42,6 +42,17 @@ const countryPerformanceData = [
   { country: 'Jordan', totalSources: 12, activeSources: 10 }
 ];
 
+const ordersPerCountryData = [
+  { country: 'UAE', orders: 23 },
+  { country: 'Saudi Arabia', orders: 18 },
+  { country: 'Qatar', orders: 15 },
+  { country: 'Kuwait', orders: 12 },
+  { country: 'Bahrain', orders: 8 },
+  { country: 'Oman', orders: 6 },
+  { country: 'Egypt', orders: 14 },
+  { country: 'Jordan', orders: 5 }
+];
+
 const statusTrendData = [
   { month: 'Jan', active: 120, inactive: 15, maintenance: 8 },
   { month: 'Feb', active: 135, inactive: 18, maintenance: 12 },
@@ -131,11 +142,11 @@ export const AnalyticsDashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Data Points</CardTitle>
+            <CardTitle className="text-sm font-medium">Sources Approved This Month</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2.4M</div>
+            <div className="text-2xl font-bold">34</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
               +15% from last month
@@ -241,19 +252,17 @@ export const AnalyticsDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Status Trend</CardTitle>
+            <CardTitle>Orders per Country</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={statusTrendData}>
+              <BarChart data={ordersPerCountryData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis dataKey="country" angle={-45} textAnchor="end" height={80} />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="active" stroke="#10B981" strokeWidth={2} name="Active" />
-                <Line type="monotone" dataKey="inactive" stroke="#EF4444" strokeWidth={2} name="Inactive" />
-                <Line type="monotone" dataKey="maintenance" stroke="#F59E0B" strokeWidth={2} name="Under Maintenance" />
-              </LineChart>
+                <Bar dataKey="orders" fill="#8B5CF6" name="Orders" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

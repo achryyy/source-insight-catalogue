@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Download, RefreshCw, Database } from 'lucide-react';
+import { Plus, Search, Download, RefreshCw, Database, CheckCircle } from 'lucide-react';
 
 interface AdipDataset {
   id: string;
@@ -19,11 +20,13 @@ interface AdipDataset {
   size: string;
   url: string;
   records: number;
+  sourceUpdated: boolean;
 }
 
 export const AdipDataSetTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
   const generateMockData = (): AdipDataset[] => {
     const countries = ['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Egypt', 'Jordan'];
@@ -46,12 +49,13 @@ export const AdipDataSetTab = () => {
         format: formats[Math.floor(Math.random() * formats.length)],
         size: `${(Math.random() * 500 + 50).toFixed(1)} MB`,
         url: `https://api.example.com/dataset-${i + 1}`,
-        records
+        records,
+        sourceUpdated: Math.random() > 0.5
       };
     });
   };
 
-  const [datasets] = useState<AdipDataset[]>(generateMockData());
+  const [datasets, setDatasets] = useState<AdipDataset[]>(generateMockData());
 
   const filteredDatasets = datasets.filter(dataset =>
     dataset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,12 +82,38 @@ export const AdipDataSetTab = () => {
     // Simulate checking for updates
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // Mock some updates found
+    // Update sourceUpdated status randomly for each dataset
+    setDatasets(prevDatasets => 
+      prevDatasets.map(dataset => ({
+        ...dataset,
+        sourceUpdated: Math.random() > 0.3 // 70% chance of being updated
+      }))
+    );
+    
     const updatesFound = Math.floor(Math.random() * 5) + 1;
     console.log(`Found ${updatesFound} sources with updates`);
     
     setIsCheckingUpdates(false);
     alert(`Checked all sources. Found ${updatesFound} sources with new updates.`);
+  };
+
+  const handleCheckStatus = async () => {
+    setIsCheckingStatus(true);
+    
+    // Simulate checking status
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    // Update status randomly for each dataset
+    const statuses: ("Active" | "Inactive" | "Under Maintenance")[] = ['Active', 'Inactive', 'Under Maintenance'];
+    setDatasets(prevDatasets => 
+      prevDatasets.map(dataset => ({
+        ...dataset,
+        status: statuses[Math.floor(Math.random() * statuses.length)]
+      }))
+    );
+    
+    setIsCheckingStatus(false);
+    alert('Source status check completed. All statuses have been updated.');
   };
 
   return (
@@ -103,6 +133,14 @@ export const AdipDataSetTab = () => {
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isCheckingUpdates ? 'animate-spin' : ''}`} />
             {isCheckingUpdates ? 'Checking Updates...' : 'Check Source Updates'}
+          </Button>
+          <Button
+            onClick={handleCheckStatus}
+            disabled={isCheckingStatus}
+            variant="outline"
+          >
+            <CheckCircle className={`h-4 w-4 mr-2 ${isCheckingStatus ? 'animate-spin' : ''}`} />
+            {isCheckingStatus ? 'Checking Status...' : 'Check Source Status'}
           </Button>
           <Dialog>
             <DialogTrigger asChild>
@@ -204,6 +242,7 @@ export const AdipDataSetTab = () => {
                 <TableHead>Records</TableHead>
                 <TableHead>Last Crawled</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Source Updated</TableHead>
                 <TableHead>Format</TableHead>
                 <TableHead>Size</TableHead>
               </TableRow>
@@ -219,6 +258,11 @@ export const AdipDataSetTab = () => {
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(dataset.status)}>
                       {dataset.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={dataset.sourceUpdated ? 'default' : 'secondary'}>
+                      {dataset.sourceUpdated ? 'Updated' : 'Not Updated'}
                     </Badge>
                   </TableCell>
                   <TableCell>{dataset.format}</TableCell>
