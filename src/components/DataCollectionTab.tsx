@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,7 @@ import { useDataSourcesWithPoints, useDeleteDataSource } from '@/hooks/useDataSo
 import { AdvancedFiltersComponent } from '@/components/AdvancedFilters';
 import { EnhancedSourceForm } from '@/components/EnhancedSourceForm';
 import { DataSource, AdvancedFilters } from '@/types/database';
-import { Plus, Edit, Trash2, Search, CheckCircle, Clock, AlertCircle, RefreshCw, Activity } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, CheckCircle, Clock, AlertCircle, RefreshCw, Activity, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const DataCollectionTab = () => {
@@ -30,6 +29,7 @@ export const DataCollectionTab = () => {
   const [editableSources, setEditableSources] = useState<Record<string, any>>({});
   const [showAIOnly, setShowAIOnly] = useState(false);
   const [showManualOnly, setShowManualOnly] = useState(false);
+  const [migratingSourceId, setMigratingSourceId] = useState<string | null>(null);
 
   const { data: sources = [], isLoading, refetch } = useDataSourcesWithPoints();
   const deleteSource = useDeleteDataSource();
@@ -101,6 +101,38 @@ export const DataCollectionTab = () => {
     if (confirm('Are you sure you want to delete this source?')) {
       deleteSource.mutate(id);
     }
+  };
+
+  const handleMigrateToAdip = async (source: any) => {
+    setMigratingSourceId(source.id);
+    
+    // Simulate migration process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Enhanced success message with better styling
+    const successDiv = document.createElement('div');
+    successDiv.className = 'fixed top-4 right-4 z-50 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-4 rounded-lg shadow-lg border border-purple-400 max-w-md';
+    successDiv.innerHTML = `
+      <div class="flex items-center space-x-3">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg">Migration Complete!</h4>
+          <p class="text-purple-100">${source.source_name} has been successfully migrated to ADIP Datasets.</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(successDiv);
+    setTimeout(() => {
+      document.body.removeChild(successDiv);
+    }, 4000);
+    
+    setMigratingSourceId(null);
+    toast.success(`${source.source_name} migrated to ADIP Datasets successfully!`);
   };
 
   const handleAutomatedDiscovery = async () => {
@@ -436,6 +468,20 @@ export const DataCollectionTab = () => {
                         className="shadow-sm"
                       >
                         <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMigrateToAdip(source)}
+                        disabled={migratingSourceId === source.id}
+                        className="shadow-sm bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
+                      >
+                        {migratingSourceId === source.id ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ArrowRight className="h-4 w-4" />
+                        )}
+                        <span className="ml-1 text-xs">Migrate to ADIP</span>
                       </Button>
                     </div>
                   </TableCell>

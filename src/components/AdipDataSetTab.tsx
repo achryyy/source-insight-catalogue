@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +75,20 @@ export const AdipDataSetTab = () => {
     }
   };
 
+  const getSourceUpdatedBadgeStyle = (sourceUpdated: boolean) => {
+    if (sourceUpdated) {
+      return {
+        className: "bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200",
+        text: "Updated"
+      };
+    } else {
+      return {
+        className: "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200",
+        text: "Not Updated"
+      };
+    }
+  };
+
   const handleCheckUpdates = async () => {
     setIsCheckingUpdates(true);
     
@@ -94,7 +107,28 @@ export const AdipDataSetTab = () => {
     console.log(`Found ${updatesFound} sources with updates`);
     
     setIsCheckingUpdates(false);
-    alert(`Checked all sources. Found ${updatesFound} sources with new updates.`);
+    
+    // Enhanced success message
+    const successDiv = document.createElement('div');
+    successDiv.className = 'fixed top-4 right-4 z-50 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-lg shadow-lg border border-green-400 max-w-md';
+    successDiv.innerHTML = `
+      <div class="flex items-center space-x-3">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg">Update Check Complete!</h4>
+          <p class="text-green-100">Found ${updatesFound} sources with new updates.</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(successDiv);
+    setTimeout(() => {
+      document.body.removeChild(successDiv);
+    }, 4000);
   };
 
   const handleCheckStatus = async () => {
@@ -113,7 +147,28 @@ export const AdipDataSetTab = () => {
     );
     
     setIsCheckingStatus(false);
-    alert('Source status check completed. All statuses have been updated.');
+    
+    // Enhanced success message
+    const successDiv = document.createElement('div');
+    successDiv.className = 'fixed top-4 right-4 z-50 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 rounded-lg shadow-lg border border-blue-400 max-w-md';
+    successDiv.innerHTML = `
+      <div class="flex items-center space-x-3">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg">Status Check Complete!</h4>
+          <p class="text-blue-100">All source statuses have been updated.</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(successDiv);
+    setTimeout(() => {
+      document.body.removeChild(successDiv);
+    }, 4000);
   };
 
   return (
@@ -248,27 +303,30 @@ export const AdipDataSetTab = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredDatasets.map((dataset) => (
-                <TableRow key={dataset.id}>
-                  <TableCell className="font-medium">{dataset.name}</TableCell>
-                  <TableCell>{dataset.country}</TableCell>
-                  <TableCell>{dataset.category}</TableCell>
-                  <TableCell>{dataset.records.toLocaleString()}</TableCell>
-                  <TableCell>{dataset.lastCrawled}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(dataset.status)}>
-                      {dataset.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={dataset.sourceUpdated ? 'default' : 'secondary'}>
-                      {dataset.sourceUpdated ? 'Updated' : 'Not Updated'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{dataset.format}</TableCell>
-                  <TableCell>{dataset.size}</TableCell>
-                </TableRow>
-              ))}
+              {filteredDatasets.map((dataset) => {
+                const sourceUpdatedStyle = getSourceUpdatedBadgeStyle(dataset.sourceUpdated);
+                return (
+                  <TableRow key={dataset.id}>
+                    <TableCell className="font-medium">{dataset.name}</TableCell>
+                    <TableCell>{dataset.country}</TableCell>
+                    <TableCell>{dataset.category}</TableCell>
+                    <TableCell>{dataset.records.toLocaleString()}</TableCell>
+                    <TableCell>{dataset.lastCrawled}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(dataset.status)}>
+                        {dataset.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={sourceUpdatedStyle.className}>
+                        {sourceUpdatedStyle.text}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{dataset.format}</TableCell>
+                    <TableCell>{dataset.size}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
