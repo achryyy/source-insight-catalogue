@@ -65,13 +65,13 @@ export const AdipDataSetTab = () => {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'Active':
-        return 'default';
+        return { className: 'bg-green-600 text-white', text: 'Active' };
       case 'Inactive':
-        return 'secondary';
+        return { className: 'bg-red-600 text-white', text: 'Inactive' };
       case 'Under Maintenance':
-        return 'destructive';
+        return { className: 'bg-yellow-600 text-white', text: 'Under Maintenance' };
       default:
-        return 'outline';
+        return { className: 'bg-gray-600 text-white', text: status };
     }
   };
 
@@ -305,6 +305,7 @@ export const AdipDataSetTab = () => {
             <TableBody>
               {filteredDatasets.map((dataset) => {
                 const sourceUpdatedStyle = getSourceUpdatedBadgeStyle(dataset.sourceUpdated);
+                const statusStyle = getStatusBadgeVariant(dataset.status);
                 return (
                   <TableRow key={dataset.id}>
                     <TableCell className="font-medium">{dataset.name}</TableCell>
@@ -313,8 +314,8 @@ export const AdipDataSetTab = () => {
                     <TableCell>{dataset.records.toLocaleString()}</TableCell>
                     <TableCell>{dataset.lastCrawled}</TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(dataset.status)}>
-                        {dataset.status}
+                      <Badge className={statusStyle.className}>
+                        {statusStyle.text}
                       </Badge>
                     </TableCell>
                     <TableCell>

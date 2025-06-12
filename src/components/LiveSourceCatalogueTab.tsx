@@ -1,11 +1,11 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, ExternalLink, Globe, Shield, Database } from 'lucide-react';
+import { Search, ExternalLink, Globe, Shield, Database, CheckCircle } from 'lucide-react';
 
 interface LiveSource {
   id: string;
@@ -258,6 +258,7 @@ export const LiveSourceCatalogueTab = () => {
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [regionFilter, setRegionFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
   const filteredSources = mockLiveSources.filter((source) => {
     const matchesSearch = source.sourceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -278,7 +279,7 @@ export const LiveSourceCatalogueTab = () => {
       case 'Inactive':
         return <Badge className="bg-red-600 text-white">Inactive</Badge>;
       case 'Under Maintenance':
-        return <Badge className="bg-yellow-600 text-white">Under Maintenance</Badge>;
+        return <Badge className="bg-yellow-600 text-white whitespace-nowrap">Under Maintenance</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -297,6 +298,37 @@ export const LiveSourceCatalogueTab = () => {
   const regions = ['all', ...Array.from(new Set(mockLiveSources.map(s => s.region)))];
   const statuses = ['all', ...Array.from(new Set(mockLiveSources.map(s => s.sourceStatus)))];
 
+  const handleCheckStatus = async () => {
+    setIsCheckingStatus(true);
+    
+    // Simulate checking status
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    setIsCheckingStatus(false);
+    
+    // Enhanced success message
+    const successDiv = document.createElement('div');
+    successDiv.className = 'fixed top-4 right-4 z-50 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 rounded-lg shadow-lg border border-blue-400 max-w-md';
+    successDiv.innerHTML = `
+      <div class="flex items-center space-x-3">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h4 class="font-semibold text-lg">Status Check Complete!</h4>
+          <p class="text-blue-100">All source statuses have been updated.</p>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(successDiv);
+    setTimeout(() => {
+      document.body.removeChild(successDiv);
+    }, 4000);
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -306,6 +338,14 @@ export const LiveSourceCatalogueTab = () => {
             Comprehensive catalogue of live data sources across all regions and departments
           </p>
         </div>
+        <Button
+          onClick={handleCheckStatus}
+          disabled={isCheckingStatus}
+          variant="outline"
+        >
+          <CheckCircle className={`h-4 w-4 mr-2 ${isCheckingStatus ? 'animate-spin' : ''}`} />
+          {isCheckingStatus ? 'Checking Status...' : 'Check Source Status'}
+        </Button>
       </div>
 
       {/* Stats Cards */}
