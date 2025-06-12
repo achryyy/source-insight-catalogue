@@ -30,20 +30,29 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Hardcoded authorized user credentials
+const AUTHORIZED_EMAIL = 'maria.elhelou@cedar-rose.com';
+const AUTHORIZED_PASSWORD = 'Cedar123';
+const AUTHORIZED_USER: User = {
+  id: '1',
+  name: 'Maria El Helou',
+  email: AUTHORIZED_EMAIL,
+  avatar: undefined
+};
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
 
   const login = async (email: string, password: string) => {
-    // Mock login - replace with actual authentication logic
-    console.log('Logging in with:', email, password);
-    const mockUser: User = {
-      id: '1',
-      name: 'John Doe',
-      email: email,
-      avatar: undefined
-    };
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
+    console.log('Attempting login with:', email);
+    
+    // Check if credentials match the authorized user
+    if (email === AUTHORIZED_EMAIL && password === AUTHORIZED_PASSWORD) {
+      setUser(AUTHORIZED_USER);
+      localStorage.setItem('user', JSON.stringify(AUTHORIZED_USER));
+    } else {
+      throw new Error('Invalid credentials. Access restricted to authorized users only.');
+    }
   };
 
   const logout = () => {
@@ -52,23 +61,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    // Mock signup - replace with actual authentication logic
-    console.log('Signing up with:', name, email, password);
-    const mockUser: User = {
-      id: '1',
-      name: name,
-      email: email,
-      avatar: undefined
-    };
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
+    // Disable signup functionality - only the authorized user can access
+    throw new Error('Registration is not available. This application is restricted to authorized users only.');
   };
 
   // Check for existing user on mount
   React.useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      // Verify the saved user is the authorized user
+      if (parsedUser.email === AUTHORIZED_EMAIL) {
+        setUser(parsedUser);
+      } else {
+        // Clear invalid user from storage
+        localStorage.removeItem('user');
+      }
     }
   }, []);
 
