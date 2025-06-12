@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DataCollectionTab } from '@/components/DataCollectionTab';
+import { SourceAssessmentTab } from '@/components/SourceAssessmentTab';
+import { LiveSourceCatalogueTab } from '@/components/LiveSourceCatalogueTab';
 import { AdipDataSetTab } from '@/components/AdipDataSetTab';
 import { OrdersTab } from '@/components/OrdersTab';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
@@ -9,7 +10,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('data-collection');
+  const [activeTab, setActiveTab] = useState('source-assessment');
   const { user, isAuthenticated, logout } = useAuth();
 
   const handleLogin = () => {
@@ -37,13 +38,16 @@ const Index = () => {
       <div className="container mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Data Sources Management Tool</h1>
-          <p className="text-gray-600">Comprehensive data collection and management platform</p>
+          <p className="text-gray-600">Comprehensive source assessment and management platform</p>
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm border">
-            <TabsTrigger value="data-collection" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-              Data Collection
+          <TabsList className="grid w-full grid-cols-5 bg-white shadow-sm border">
+            <TabsTrigger value="source-assessment" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+              Source Assessment
+            </TabsTrigger>
+            <TabsTrigger value="live-catalogue" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+              Live Source Catalogue
             </TabsTrigger>
             <TabsTrigger value="adip-datasets" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
               ADIP Datasets
@@ -56,8 +60,12 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="data-collection">
-            <DataCollectionTab />
+          <TabsContent value="source-assessment">
+            <SourceAssessmentTab />
+          </TabsContent>
+
+          <TabsContent value="live-catalogue">
+            <LiveSourceCatalogueTab />
           </TabsContent>
 
           <TabsContent value="adip-datasets">
